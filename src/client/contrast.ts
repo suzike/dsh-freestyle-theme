@@ -151,7 +151,7 @@ export const AUDIT_PAIRS: readonly PairDef[] = [
   { id: 'button.primary', fg: '--dsw-alias-label-primary-foreground', bg: '--dsw-alias-button-primary-fill', kind: 'secondary', fix: 'accent' },
   { id: 'button.contrast', fg: '--dsw-alias-label-primary-foreground', bg: '--dsw-alias-button-contrast-fill', kind: 'secondary', fix: 'accent' },
   { id: 'toast', fg: '--dsw-alias-toast-label', bg: '--dsw-alias-toast-bg', kind: 'body', fix: 'none' },
-  { id: 'tooltip', fg: '--dsw-alias-label-primary', bg: '--dsw-alias-tooltip-bg', kind: 'body', fix: 'surface' },
+  { id: 'tooltip', fg: '--dsw-alias-toast-label', bg: '--dsw-alias-tooltip-bg', kind: 'body', fix: 'none' },
   { id: 'menu', fg: '--dsw-alias-label-primary', bg: '--dsw-menu-surface-fill', kind: 'body', fix: 'surface' },
   { id: 'state.success', fg: '--dsw-alias-state-success-primary', bg: '--dsw-alias-bg-base', kind: 'ui', fix: 'state' },
   { id: 'state.warn', fg: '--dsw-alias-state-warn-primary', bg: '--dsw-alias-bg-base', kind: 'ui', fix: 'state' },

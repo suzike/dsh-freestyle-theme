@@ -244,9 +244,9 @@ export function fullPalette(spec: ThemeSpec): Palette {
 
   // Foreground ladder.
   const i1 = tx
-  const i2 = light ? tx + 0.22 : tx - 0.2
-  const i3 = light ? tx + 0.38 : tx - 0.3
-  const i4 = light ? tx + 0.5 : tx - 0.4
+  const i2 = light ? tx + 0.22 : tx - 0.17
+  const i3 = light ? tx + 0.38 : tx - 0.24
+  const i4 = light ? tx + 0.47 : tx - 0.24
   const iDim = light ? 0.9 : 0.34
 
   const onAccent = l1 > 0.62 ? 0.13 : 0.97

@@ -582,7 +582,7 @@ export const CSS = `
   font-size: 11.5px;
 }
 .ft-audit-row:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.05)); }
-.ft-audit-row[data-pass='false'] { background: var(--dsw-alias-state-error-tertiary, rgba(220,38,38,.08)); }
+.ft-audit-row[data-pass='false'] { background: color-mix(in oklab, var(--dsw-alias-state-error-primary) 9%, transparent); }
 .ft-audit-dot { width: 7px; height: 7px; border-radius: 50%; margin-left: 3px; }
 .ft-audit-num { font-size: 10.5px; color: var(--dsw-alias-label-tertiary, #8a8f98); font-variant-numeric: tabular-nums; }
 .ft-audit-num b { color: var(--dsw-alias-label-secondary, #6b7280); font-weight: 600; }
@@ -956,7 +956,7 @@ export const CSS = `
   padding: 6px 8px;
   border-radius: 8px;
   background: var(--dsw-alias-tooltip-bg, #111827);
-  color: var(--dsw-alias-tooltip-label, #f9fafb);
+  color: var(--dsw-alias-toast-label);
   font-size: 10.5px;
   line-height: 1.5;
   box-shadow: 0 8px 24px rgba(0,0,0,.24);

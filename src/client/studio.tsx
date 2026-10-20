@@ -307,7 +307,7 @@ const Channel: FC<ChannelProps> = ({
         <SwatchChip palette={palette} token="--dsw-alias-bg-base" />
         <SwatchChip palette={palette} token="--dsw-alias-bg-layer-1" />
         <SwatchChip palette={palette} token="--dsw-alias-bg-layer-2" />
-        <SwatchChip palette={palette} token="--dsw-alias-overlay-test" />
+        <SwatchChip palette={palette} token="--dsw-alias-bg-overlay" />
         <SwatchChip palette={palette} token="--dsw-alias-border-l2" />
         <SwatchChip palette={palette} token="--dsw-alias-label-secondary" />
         <SwatchChip palette={palette} token="--dsw-alias-brand-primary" />
