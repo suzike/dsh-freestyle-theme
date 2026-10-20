@@ -24,7 +24,7 @@
 - 🔍 **令牌巡检** — Inspect 模式点任意部件，浮层显示它实际用了哪些 `--dsw-*` 令牌
 - ✅ **无障碍体检** — 20 组关键前景/背景按 WCAG 4.5:1 / 3:1 与 APCA Lc 双重判定；「一键修复」只动明度轴，逼到全部通过为止
 - 📚 **12 套坐标预设 + 主题库** — 预设不是换色相，而是自带中性温度、明度梯度与状态簇的完整坐标系；主题库存宿主（`~/.dsh/freestyle-theme/themes.json`）也存本地
-- 🖼️ **图片 → 主题** — 客户端量化取色（中位切分 + 饱和度加权），图片不出浏览器
+- 🖼️ **图片 → 主题** — 客户端在 OKLab 空间做 k-means 聚类取色，权重按像素占比归一，图片不出浏览器
 - ✨ **一句话 → 主题** — 宿主 `llm` 生成候选坐标；模型不可用时退回本地情绪映射，不会卡死
 - 🔗 **分享码** — 一个 URL 分享整套配色，另可复制 CSS 变量与 JSON
 - ⌨️ **键盘优先** — `⌘Z`/`⇧⌘Z` 撤销重做、`⌘K` 命令面板、`⌘S` 存库、`⌘±/0` 缩放、`Esc` 关闭
@@ -179,16 +179,43 @@ dsh-freestyle-theme/
 │       ├── locale.ts         # zh / en 字典
 │       └── services.ts       # 壳服务的最小本地类型（零跨包依赖）
 ├── shared/                   # 打包预设：闭包工厂 + 平台模块表
+├── tests/                    # palette / contrast / generate 三组单元测试
+├── scripts/check-tokens.mjs  # 发版前护栏：令牌名对壳做差集、对比度全量
 ├── docs/design-system.md     # 设计系统与动效规范
 ├── locale/  icon.svg  cordis.patch.yml  package.json  tsdown.config.ts  tsconfig*.json
+```
+
+## ✅ 质量护栏
+
+```bash
+pnpm test          # 23 项单元测试，直接跑 TS 源码
+pnpm check:tokens  # 令牌名 / 令牌数 / 对比度 / 分享码
+```
+
+`pnpm test` 覆盖三块最容易静默出错的地方：
+
+| 测试 | 守住的东西 |
+|---|---|
+| `palette.test.mjs` | 119 个令牌成对、明暗层级单调、12 套预设互不重复、分享码无损、恶意输入被 clamp、`presetSpec` 接受 id 或对象 |
+| `contrast.test.mjs` | WCAG 21:1 基准、APCA 极性、12 套预设 × 明暗 × 20 组对比全绿、一键修复只动明度且确实收敛 |
+| `generate.test.mjs` | OKLCH 参考点、取色权重归一、空/透明图不炸、暗图自动选暗色、无模型时本地候选仍可用 |
+
+`pnpm check:tokens` 额外把源码里引用到的每个 `--dsw-*` 与已装壳的
+`dsh-client-ui-theme/lib/client.js` 做差集——**拼错的令牌不会报错，只会静默丢样式**，
+这个差集是唯一能提前发现它的地方：
+
+```bash
+DSH_THEME_CLIENT=~/.dsh/.../dsh-client-ui-theme/lib/client.js pnpm check:tokens
 ```
 
 ## 🛠️ 开发
 
 ```bash
-pnpm typecheck   # tsc --noEmit
-pnpm build       # 声明 + 双产物
-pnpm watch       # 客户端产物监听重建
+pnpm typecheck     # tsc --noEmit
+pnpm test          # 单元测试（23 项）
+pnpm check:tokens  # 令牌与对比度护栏
+pnpm build         # 声明 + 双产物
+pnpm watch         # 客户端产物监听重建
 ```
 
 改完产物后同步到 `~/.dsh/plugins/dsh-freestyle-theme/` 并重启 dsh web。

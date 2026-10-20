@@ -85,6 +85,10 @@ export type Palette = Record<string, string>
 
 /** Per-role chroma ceilings: the guardrail that keeps palettes tasteful. */
 export const CHROMA_CAP = {
+  /** Brand primary: the one place a vivid colour is allowed. */
+  brand: 0.37,
+  /** Channel/secondary accent. */
+  accent: 0.3,
   /** Plain surfaces (backgrounds, cards, bubbles). */
   surface: 0.03,
   /** Neutral chrome (borders, scrollbars, dividers). */
@@ -99,7 +103,10 @@ export const CHROMA_CAP = {
 
 /** Clamp a number into `[min, max]`. */
 export function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value))
+  const low = Number.isFinite(min) ? min : 0
+  const high = Number.isFinite(max) ? max : 1
+  const input = Number.isFinite(value) ? value : low
+  return Math.max(low, Math.min(high, input))
 }
 
 const srgbEncode = (value: number): number =>
@@ -162,7 +169,7 @@ export function parseColor(value: string): [number, number, number] | null {
 /** Default lightness knobs per mode. */
 export const DEF_LIGHT = { l1: 0.52, l2: 0.6, bg: 0.955, tx: 0.14, sb: 0.976 } as const
 /** Default lightness knobs for dark mode. */
-export const DEF_DARK = { l1: 0.76, l2: 0.76, bg: 0.14, tx: 0.955, sb: 0.098 } as const
+export const DEF_DARK = { l1: 0.78, l2: 0.78, bg: 0.14, tx: 0.955, sb: 0.098 } as const
 
 /** Look defaults. */
 export const DEF_LOOK = { fontPair: 'sans' as FontPair, fontScale: 1, radius: 1 as Tier, shadow: 1 as Tier }
@@ -522,8 +529,8 @@ export function normalizeSpec(raw: unknown): ThemeSpec {
     th: hue(input.th, base.th),
     th2: hue(input.th2, base.th2),
     ths: hue(input.ths, base.ths),
-    c1: clamp(num(input.c1, base.c1), 0, 0.37),
-    c2: clamp(num(input.c2, base.c2), 0, 0.3),
+    c1: clamp(num(input.c1, base.c1), 0, CHROMA_CAP.brand),
+    c2: clamp(num(input.c2, base.c2), 0, CHROMA_CAP.accent),
     sc: clamp(num(input.sc, base.sc), 0, 0.06),
     l1: clamp(num(input.l1, base.l1), 0.2, 0.95),
     l2: clamp(num(input.l2, base.l2), 0.2, 0.95),
@@ -630,9 +637,15 @@ export const PRESETS: readonly ThemePreset[] = [
   { id: 'moss', light: { th: 120, c1: 0.06, sc: 0.01, neutralTint: 0.48, spread: 0.1, stateBoost: 0.55 }, dark: { th: 120, c1: 0.065, sc: 0.01, neutralTint: 0.52, spread: 0.14, stateBoost: 0.6 } },
 ]
 
-/** Instantiate a preset for one mode. */
-export function presetSpec(preset: ThemePreset, mode: ThemeMode): ThemeSpec {
-  const patch = mode === 'light' ? preset.light : preset.dark
+/**
+ * Instantiate a preset for one mode. Accepts the preset or its id — passing an
+ * id used to fall through to the defaults, which made twelve different cards
+ * render as the same theme.
+ */
+export function presetSpec(preset: ThemePreset | string, mode: ThemeMode): ThemeSpec {
+  const found = typeof preset === 'string' ? PRESETS.find((entry) => entry.id === preset) : preset
+  if (!found) return defaultSpec(mode)
+  const patch = mode === 'light' ? found.light : found.dark
   const spec = { ...defaultSpec(mode), ...patch }
   const { th2, ths } = huesForHarmony(spec.th, 'analogous')
   return { ...spec, th2, ths, mode }

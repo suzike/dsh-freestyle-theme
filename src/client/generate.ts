@@ -133,13 +133,39 @@ export function quantise(pixels: Uint8ClampedArray, sampleStride = 17): Swatch[]
     }
   }
 
+  // Final assignment pass: a swatch's weight is the share of pixels it owns,
+  // which is what makes "dominant colour" mean something in the UI.
+  const counts = new Array<number>(k).fill(0)
+  for (const point of points) {
+    let best = 0
+    let bestDistance = Infinity
+    for (let index = 0; index < k; index++) {
+      const centre = centres[index]
+      const dHue = Math.abs(
+        Math.min(Math.abs(point.h - centre.h), 360 - Math.abs(point.h - centre.h)),
+      )
+      const distance =
+        (point.l - centre.l) ** 2 +
+        (point.c - centre.c) ** 2 +
+        ((dHue / 180) * 0.35) ** 2
+      if (distance < bestDistance) {
+        bestDistance = distance
+        best = index
+      }
+    }
+    counts[best] += 1
+  }
+
   return centres
-    .map((centre) => ({
+    .map((centre, index) => ({
       hex: rgbToHex(...oklchToRgb(centre.l, centre.c, centre.h)),
       oklch: centre,
-      weight: 0,
+      weight: points.length === 0 ? 0 : counts[index] / points.length,
     }))
-    .filter((swatch) => Number.isFinite(swatch.oklch.h))
+    // Empty clusters are an artefact of k-means with too few samples to fill
+    // k buckets: they carry no colour and must not reach the UI.
+    .filter((swatch) => Number.isFinite(swatch.oklch.h) && swatch.weight > 0)
+    .sort((a, b) => b.weight - a.weight)
 }
 
 function rgbToHex(r: number, g: number, b: number): string {

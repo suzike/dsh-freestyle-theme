@@ -76,7 +76,13 @@ export class OverrideOwner {
   private applied: TokenOverrides | null = null
   private disposers: Disposable[] = []
 
-  constructor(private readonly theme: ThemeService | undefined, private readonly source: string) {}
+  private readonly theme: ThemeService | undefined
+  private readonly source: string
+
+  constructor(theme: ThemeService | undefined, source: string) {
+    this.theme = theme
+    this.source = source
+  }
 
   /** Apply (or clear, with `null`) this owner's overrides. */
   set(overrides: TokenOverrides | null): boolean {
