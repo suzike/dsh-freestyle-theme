@@ -1,13 +1,15 @@
 # dsh-freestyle-theme bundle patch — inserts the dual-face plugin row into the
 # profile roster. Applied as a profile bundle layer (`dsh.bundle.patch`).
 #
-# Host face (exports "."): the `/api/dsh-freestyle-theme/name` route that turns
-# a theme's OKLCH tokens into a name/tags/description through the default model
-# (`llm` + `agentDefaultModel`), so no model credential ever reaches the browser.
+# Host face (exports "."): three loopback-only JSON routes under
+# `/api/dsh-freestyle-theme` — `themes` (GET/PUT the shared library in
+# `~/.dsh/freestyle-theme/themes.json`), `generate` (image/mood to candidate
+# coordinates) and `name` (tokens to name/tags/description) through the default
+# model, so no model credential ever reaches the browser.
 #
 # Client face (exports "./client", declared by `dsh.client.platform = "web"`):
-# the settings-page proposer + designer, loaded by the web shell's module
-# loader through the `dsh.client` manifest field in package.json.
+# a row in Settings → General that opens the full-window theme studio, loaded by
+# the web shell's module loader through the `dsh.client` manifest field.
 - insert:
     - id: freestyle-theme
       name: dsh-freestyle-theme
