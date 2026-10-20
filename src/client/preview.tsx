@@ -245,9 +245,9 @@ export const PreviewFrame: FC<FrameProps> = ({ spec, palette, view, large, blind
             className="ft-pv-composer"
           >
             <div className="ft-pv-input">
-              <span>{t('generate.promptHint')}</span>
-              <span className="ft-pv-send">↑</span>
+              <span>{t('canvas.composer')}</span>
             </div>
+            <span className="ft-pv-send">↑</span>
           </Hot>
         )}
       </div>

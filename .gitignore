@@ -2,3 +2,6 @@ node_modules/
 lib/
 *.log
 .DS_Store
+
+# local render preview (scripts/preview-ui.mjs output)
+.preview/

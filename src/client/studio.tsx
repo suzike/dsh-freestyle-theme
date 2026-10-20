@@ -34,6 +34,7 @@ import {
   type ChannelKey,
   type Palette,
   type ThemeSpec,
+  type ThemeMode,
   type Tier,
 } from './palette'
 import { aiCandidates, localCandidates, presetCandidates, themeFromImage, type Swatch } from './generate'
@@ -98,6 +99,7 @@ const Ico: FC<IconProps> = ({ name, size = 16 }) => {
     wand: <path d="M4 20L16 8M14 6l2-2M18 10l2-2M9 4l1 2M4 9l2 1" />,
     contrast: <path d="M12 3a9 9 0 1 0 0 18z" />,
     sliders: <path d="M5 4v6M5 14v6M12 4v10M12 18v2M19 4v2M19 10v10M3 12h4M10 16h4M17 8h4" />,
+    search: <path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4.2-4.2" />,
   }
   return (
     <svg
@@ -190,9 +192,9 @@ interface SectionProps {
 const Section: FC<SectionProps> = ({ title, children, defaultOpen = true, extra }) => {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <div className="ft-sect">
+    <div className="ft-sect" data-open={open}>
       <button className="ft-sect-head" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <Ico name="chevron" size={13} />
+        <span className="ft-chevron"><Ico name="chevron" size={13} /></span>
         <span>{title}</span>
         <span className="ft-spacer" />
         {extra}
@@ -221,6 +223,7 @@ const SwatchChip: FC<SwatchProps> = ({ palette, token, size = 20 }) => (
 interface ChannelProps {
   t: Translate
   title: string
+  mode: ThemeMode
   palette: Palette
   hue: number
   chroma: number
@@ -237,6 +240,7 @@ interface ChannelProps {
 const Channel: FC<ChannelProps> = ({
   t,
   title,
+  mode,
   palette,
   hue,
   chroma,
@@ -250,7 +254,10 @@ const Channel: FC<ChannelProps> = ({
   onLock,
 }) => {
   const hex = oklchToHex(light, chroma, hue)
-  const hueStops = HUE_STOPS.map((stop) => oklchToHex(0.72, Math.min(chroma, 0.14), stop)).join(',')
+  // Hue chips sit on either a light or a dark field, so their own lightness has
+  // to follow the mode or they wash out.
+  const chipLight = mode === 'dark' ? 0.62 : 0.74
+  const hueStops = HUE_STOPS.map((stop) => oklchToHex(chipLight, Math.min(chroma, 0.14), stop)).join(',')
   const activeStop = HUE_STOPS[hueStopIndex(hue)]
 
   return (
@@ -275,7 +282,7 @@ const Channel: FC<ChannelProps> = ({
             key={stop}
             aria-pressed={stop === activeStop}
             aria-label={`${t('axis.hue')} ${stop}`}
-            style={{ background: oklchToHex(0.7, Math.min(chroma, 0.16), stop) }}
+            style={{ background: oklchToHex(chipLight, Math.min(chroma, 0.16), stop) }}
             onClick={() => !locked && onHue(stop)}
           />
         ))}
@@ -288,7 +295,7 @@ const Channel: FC<ChannelProps> = ({
         min={0}
         max={360}
         step={1}
-        track={`linear-gradient(90deg, ${hueStops}, ${oklchToHex(0.72, Math.min(chroma, 0.14), 360)})`}
+        track={`linear-gradient(90deg, ${hueStops}, ${oklchToHex(chipLight, Math.min(chroma, 0.14), 360)})`}
         formatValue={(value) => `${Math.round(value)}°`}
         onChange={(value) => !locked && onHue(value)}
       />
@@ -314,15 +321,6 @@ const Channel: FC<ChannelProps> = ({
         formatValue={(value) => value.toFixed(2)}
         onChange={(value) => !locked && onLight(value)}
       />
-      <div className="ft-swatches" style={{ marginTop: 4 }}>
-        <SwatchChip palette={palette} token="--dsw-alias-bg-base" />
-        <SwatchChip palette={palette} token="--dsw-alias-bg-layer-1" />
-        <SwatchChip palette={palette} token="--dsw-alias-bg-layer-2" />
-        <SwatchChip palette={palette} token="--dsw-alias-bg-overlay" />
-        <SwatchChip palette={palette} token="--dsw-alias-border-l2" />
-        <SwatchChip palette={palette} token="--dsw-alias-label-secondary" />
-        <SwatchChip palette={palette} token="--dsw-alias-brand-primary" />
-      </div>
     </div>
   )
 }
@@ -352,6 +350,7 @@ interface ThemeCardProps {
   t: Translate
   name: string
   subtitle?: string
+  mode: ThemeMode
   light: Palette
   dark: Palette
   selected: boolean
@@ -361,20 +360,24 @@ interface ThemeCardProps {
   deleteLabel?: string
 }
 
-const ThemeCard: FC<ThemeCardProps> = ({ t, name, subtitle, light, dark, selected, armed, onSelect, onDelete, deleteLabel }) => {
-  const l = light['--dsw-alias-bg-base'] ?? '#fff'
-  const d = dark['--dsw-alias-bg-base'] ?? '#111'
-  const accent = light['--dsw-alias-brand-primary'] ?? '#888'
+const ThemeCard: FC<ThemeCardProps> = ({ t, name, subtitle, mode, light, dark, selected, armed, onSelect, onDelete, deleteLabel }) => {
+  const shown = mode === 'dark' ? dark : light
+  // A miniature window: sidebar strip, canvas, two text lines and the accent.
+  const side = shown['--dsw-specific-sidebar-fill'] ?? '#ddd'
+  const canvas = shown['--dsw-alias-bg-base'] ?? '#fff'
+  const ink = shown['--dsw-alias-label-primary'] ?? '#222'
+  const accent = shown['--dsw-alias-brand-primary'] ?? '#888'
   return (
     // The card is a container, not a button: the delete control must stay a
     // separate focus stop, and a button cannot legally nest a button.
     <div className="ft-card" data-selected={selected}>
       <button type="button" className="ft-card-main" aria-pressed={selected} onClick={onSelect}>
         <span className="ft-card-sw">
-          <i style={{ background: l }} />
-          <i style={{ background: d }} />
-          <i style={{ background: accent }} />
-          <i style={{ background: light['--dsw-specific-sidebar-fill'] ?? l }} />
+          <i style={{ background: side }} />
+          <i style={{ background: canvas }}>
+            <b style={{ background: ink, opacity: 0.55 }} />
+            <b style={{ background: accent }} />
+          </i>
         </span>
         <span className="ft-card-main-text">
           <span className="ft-card-name">{name}</span>
@@ -880,47 +883,42 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
           <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.close')} onClick={close}>
             <Ico name="close" />
           </button>
-          <input
-            className="ft-name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            aria-label={t('studio.name')}
-            spellCheck={false}
-          />
-          <span className={summary.passed === summary.total ? 'ft-badge ft-badge-ok' : 'ft-badge ft-badge-warn'}>
-            {summary.passed === summary.total ? <Ico name="check" size={11} /> : <Ico name="contrast" size={11} />}
-            {format(t('a11y.pass'), { pass: summary.passed, total: summary.total })}
-          </span>
+          <div className="ft-head-title">
+            <input
+              className="ft-name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              aria-label={t('studio.name')}
+              spellCheck={false}
+            />
+            <span className="ft-head-sub">
+              {t(`studio.${spec.mode}`)} · {Math.round(spec.th)}° · {summary.passed}/{summary.total}
+            </span>
+          </div>
         </div>
 
         <div className="ft-head-mid">
-          <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.light')} title={t('studio.light')}
-            disabled={spec.mode === 'light'} onClick={() => patch({ mode: 'light' })}>
-            <Ico name="sun" />
-          </button>
           <div className="ft-seg" role="group" aria-label={t('studio.light')}>
-            <button aria-pressed={spec.mode === 'light'} onClick={() => patch({ mode: 'light' })}>{t('studio.light')}</button>
-            <button aria-pressed={spec.mode === 'dark'} onClick={() => patch({ mode: 'dark' })}>{t('studio.dark')}</button>
+            <button aria-pressed={spec.mode === 'light'} onClick={() => patch({ mode: 'light' })}>
+              <Ico name="sun" size={12} />{t('studio.light')}
+            </button>
+            <button aria-pressed={spec.mode === 'dark'} onClick={() => patch({ mode: 'dark' })}>
+              <Ico name="moon" size={12} />{t('studio.dark')}
+            </button>
           </div>
-          <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.dark')} title={t('studio.dark')}
-            disabled={spec.mode === 'dark'} onClick={() => patch({ mode: 'dark' })}>
-            <Ico name="moon" />
-          </button>
-          <span style={{ width: 6 }} />
-          <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.undo')} onClick={undo} disabled={doc.index === 0}>
-            <Ico name="undo" />
-          </button>
-          <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.redo')} onClick={redo} disabled={doc.index >= doc.stack.length - 1}>
-            <Ico name="redo" />
-          </button>
         </div>
 
         <div className="ft-head-right">
-          <span style={{ fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary)' }}>{t('studio.hint')}</span>
-          <button className="ft-btn" onClick={() => setGenOpen(true)}>
-            <Ico name="wand" />{t('generate.title')}
-          </button>
-          <button className="ft-btn ft-btn-icon" aria-label={t('studio.share')} onClick={() => setShareOpen(true)}>
+          <div className="ft-group">
+            <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.undo')} title={t('studio.undo')} onClick={undo} disabled={doc.index === 0}>
+              <Ico name="undo" />
+            </button>
+            <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.redo')} title={t('studio.redo')} onClick={redo} disabled={doc.index >= doc.stack.length - 1}>
+              <Ico name="redo" />
+            </button>
+          </div>
+          <span className="ft-divider-v" />
+          <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.share')} title={t('studio.share')} onClick={() => setShareOpen(true)}>
             <Ico name="share" />
           </button>
           <button className="ft-btn ft-btn-primary" onClick={apply}>
@@ -930,33 +928,34 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
       </header>
 
       {/* body */}
-      <div className={`ft-body${inspOpen ? '' : ' no-inspector'}${railTab === 'library' ? ' rail-collapsed' : ''}`}>
+      <div className={`ft-body${inspOpen ? '' : ' no-inspector'}`}>
         {/* rail */}
         <nav className="ft-rail" aria-label={t('rail.templates')}>
-          <button className="ft-rail-btn" aria-pressed={railTab === 'templates'} onClick={() => setRailTab('templates')}>
-            <Ico name="grid" /><span>{t('rail.templates')}</span>
+          <button className="ft-rail-btn" title={t('rail.templates')} aria-pressed={railTab === 'templates'} onClick={() => setRailTab('templates')}>
+            <Ico name="grid" /><span className="ft-sr">{t('rail.templates')}</span>
           </button>
-          <button className="ft-rail-btn" aria-pressed={railTab === 'library'} onClick={() => setRailTab('library')}>
-            <Ico name="library" /><span>{t('rail.library')}</span>
+          <button className="ft-rail-btn" title={t('rail.library')} aria-pressed={railTab === 'library'} onClick={() => setRailTab('library')}>
+            <Ico name="library" /><span className="ft-sr">{t('rail.library')}</span>
           </button>
-          <button className="ft-rail-btn" aria-pressed={inspect} onClick={() => setInspect(!inspect)}>
-            <Ico name="scan" /><span>{t('canvas.inspect')}</span>
+          <button className="ft-rail-btn" title={t('canvas.inspect')} aria-pressed={inspect} onClick={() => setInspect(!inspect)}>
+            <Ico name="scan" /><span className="ft-sr">{t('canvas.inspect')}</span>
           </button>
           <button
             className="ft-rail-btn"
+            title={t('inspector.color')}
             aria-pressed={inspOpen}
             aria-expanded={inspOpen}
             aria-controls="ft-inspector"
             onClick={() => setInspOpen((value) => !value)}
           >
-            <Ico name="sliders" /><span>{t('inspector.color')}</span>
+            <Ico name="sliders" /><span className="ft-sr">{t('inspector.color')}</span>
           </button>
-          <button className="ft-rail-btn" aria-pressed={compare} onClick={() => setCompare(!compare)}>
-            <Ico name="contrast" /><span>{t('canvas.compare')}</span>
+          <button className="ft-rail-btn" title={t('canvas.compare')} aria-pressed={compare} onClick={() => setCompare(!compare)}>
+            <Ico name="contrast" /><span className="ft-sr">{t('canvas.compare')}</span>
           </button>
           <span className="ft-rail-spacer" />
-          <button className="ft-rail-btn" onClick={() => setGenOpen(true)}>
-            <Ico name="image" /><span>{t('generate.image')}</span>
+          <button className="ft-rail-btn" title={t('generate.image')} onClick={() => setGenOpen(true)}>
+            <Ico name="image" /><span className="ft-sr">{t('generate.image')}</span>
           </button>
         </nav>
 
@@ -964,22 +963,24 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
         <aside className="ft-list">
           <div className="ft-list-head">
             <h2>{railTab === 'templates' ? t('rail.templates') : t('rail.mine')}</h2>
-            <span className="ft-list-count">{railTab === 'templates' ? PRESETS.length : library.length}</span>
-            <span className="ft-spacer" style={{ flex: 1 }} />
+            <span className="ft-list-count">{railTab === 'templates' ? presets.length : library.length}</span>
+            <span className="ft-spacer" />
             {railTab === 'library' && (
-              <button className="ft-btn ft-btn-sm" onClick={saveTheme}>
-                <Ico name="save" size={12} />{t('rail.save')}
+              <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('rail.save')} title={t('rail.save')} onClick={saveTheme}>
+                <Ico name="save" size={13} />
               </button>
             )}
           </div>
-          <div style={{ padding: '6px 8px 4px' }}>
-            <input className="ft-input" placeholder={t('rail.search')} value={search} onChange={(event) => setSearch(event.target.value)} />
+          <div className="ft-search">
+            <span className="ft-search-icon"><Ico name="search" size={12} /></span>
+            <input
+              className="ft-input ft-search-input"
+              placeholder={t('rail.search')}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              aria-label={t('rail.search')}
+            />
           </div>
-          {railTab === 'library' && hostDown && (
-            <div style={{ padding: '0 10px 6px', fontSize: 10.5, lineHeight: 1.4, color: 'var(--dsw-alias-state-warn-label, #b45309)' }}>
-              {t('err.noHost')}
-            </div>
-          )}
           <div className="ft-list-body">
             {railTab === 'templates' &&
               presets.map((preset) => {
@@ -991,7 +992,8 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
                     t={t}
                     key={preset.id}
                     name={t(`preset.${preset.id}`)}
-                    subtitle={`${Math.round(lightSpec.th)}° · ${t('channel.ths')}`}
+                    subtitle={`${Math.round(lightSpec.th)}°`}
+                    mode={spec.mode}
                     light={lightPalette}
                     dark={darkPalette}
                     selected={hueStopIndex(spec.th) === hueStopIndex(lightSpec.th) && Math.abs(spec.c1 - lightSpec.c1) < 0.004}
@@ -1016,6 +1018,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
                     t={t}
                     name={entry.name}
                     subtitle={new Date(entry.updatedAt).toLocaleDateString()}
+                    mode={spec.mode}
                     light={fullPalette(switchModeSafe(entrySpec, 'light'))}
                     dark={fullPalette(switchModeSafe(entrySpec, 'dark'))}
                     selected={false}
@@ -1053,26 +1056,26 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
             </div>
             <span className="ft-spacer" />
             <button className="ft-chip" aria-pressed={compare} onClick={() => setCompare(!compare)}>
-              {t('canvas.compare')}: {compare ? `${Math.round(split)}%` : t('canvas.off')}
+              <Ico name="contrast" size={12} />{t('canvas.compare')}
             </button>
             <button className="ft-chip" aria-pressed={inspect} onClick={() => setInspect(!inspect)}>
               <Ico name="scan" size={12} />{t('canvas.inspect')}
             </button>
             <select
-              className="ft-chip"
+              className="ft-chip ft-select"
               aria-label={t('canvas.blind')}
               value={blind}
               onChange={(event) => setBlind(event.target.value as BlindMode)}
-              style={{ paddingRight: 4 }}
             >
               {(['none', 'deuteranopia', 'protanopia', 'tritanopia', 'achromatopsia'] as BlindMode[]).map((item) => (
                 <option key={item} value={item}>{t(`canvas.blind.${item}`)}</option>
               ))}
             </select>
-            <span style={{ width: 1, height: 18, background: 'var(--dsw-alias-border-l2)' }} />
-            <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('canvas.zoom')} onClick={() => setZoom((value) => clamp(+(value - 0.1).toFixed(2), 0.5, 1.5))}>−</button>
-            <span style={{ fontSize: 11, color: 'var(--dsw-alias-label-secondary)', width: 34, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
-            <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('canvas.zoom')} onClick={() => setZoom((value) => clamp(+(value + 0.1).toFixed(2), 0.5, 1.5))}>+</button>
+            <div className="ft-zoomctl">
+              <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('canvas.zoom')} onClick={() => setZoom((value) => clamp(+(value - 0.1).toFixed(2), 0.5, 1.5))}>−</button>
+              <span>{Math.round(zoom * 100)}%</span>
+              <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('canvas.zoom')} onClick={() => setZoom((value) => clamp(+(value + 0.1).toFixed(2), 0.5, 1.5))}>+</button>
+            </div>
           </div>
 
           <div className="ft-canvas-stage" ref={canvasRef}>
@@ -1113,17 +1116,19 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
                 </div>
               ) : (
                 <div className="ft-zoom-inner" style={{ transform: `scale(${zoom})` }}>
-                  <PreviewFrame
-                    t={t}
-                    spec={spec}
-                    palette={palette}
-                    view={view}
-                    large
-                    blind={blind}
-                    filters={false}
-                    inspect={inspect}
-                    onInspect={setHit}
-                  />
+                  <div className="ft-stage-card">
+                    <PreviewFrame
+                      t={t}
+                      spec={spec}
+                      palette={palette}
+                      view={view}
+                      large
+                      blind={blind}
+                      filters={false}
+                      inspect={inspect}
+                      onInspect={setHit}
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -1134,9 +1139,9 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
         <aside className="ft-insp" id="ft-inspector" aria-label={t('inspector.color')} hidden={!inspOpen}>
           <div className="ft-insp-body">
             <Section title={t('inspector.color')}>
-              <Channel {...channelProps('th', spec.th, spec.c1, spec.l1, 0.37)} />
-              <Channel {...channelProps('th2', spec.th2, spec.c2, spec.l2, 0.2)} />
-              <Channel {...channelProps('ths', spec.ths, spec.sc, 0.7, 0.03)} />
+              <Channel mode={spec.mode} {...channelProps('th', spec.th, spec.c1, spec.l1, 0.37)} />
+              <Channel mode={spec.mode} {...channelProps('th2', spec.th2, spec.c2, spec.l2, 0.2)} />
+              <Channel mode={spec.mode} {...channelProps('ths', spec.ths, spec.sc, 0.7, 0.03)} />
 
               <Slider
                 label={t('color.neutral')}
@@ -1458,6 +1463,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
                         key={index}
                         name={`${Math.round(candidate.th)}°`}
                         subtitle={index === 0 && genChars.length > 0 ? t('generate.image') : `${candidate.c1.toFixed(3)}`}
+                        mode={candidate.mode}
                         light={light}
                         dark={dark}
                         selected={false}

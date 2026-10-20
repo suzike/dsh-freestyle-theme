@@ -154,21 +154,21 @@ const SettingsRow: FC<RowProps> = ({ ctx, t, theme, owner }) => {
 
   return (
     <div className="ft-row">
+      <span className="ft-row-thumb" aria-hidden="true">
+        {swatches.map((color, index) => (
+          <i key={index} style={{ background: color ?? 'transparent' }} />
+        ))}
+      </span>
+
       <div className="ft-row-main">
-        <span className="ft-row-thumb" aria-hidden="true">
-          {swatches.map((color, index) => (
-            <i key={index} style={{ background: color ?? 'transparent' }} />
-          ))}
-        </span>
-        <span style={{ display: 'grid', gap: 1, minWidth: 0 }}>
-          <span className="ft-row-title">{t('plugin.title')}</span>
-          <span className="ft-row-hint">{summary}</span>
-        </span>
+        <span className="ft-row-title">{t('plugin.title')}</span>
+        <span className="ft-row-hint">{summary}</span>
       </div>
 
       <span className="ft-row-actions">
         <button className="ft-btn ft-btn-sm" onClick={() => setOpen(true)}>
           {applied ? t('row.applied') : t('row.open')}
+          <span aria-hidden="true">›</span>
         </button>
       </span>
 
