@@ -29,6 +29,10 @@ function fakeRequest(method, body, options = {}) {
   request.destroy = () => {
     request.destroyed = true
   }
+  request.resumed = false
+  request.resume = () => {
+    request.resumed = true
+  }
   setImmediate(() => {
     if (options.chunks) {
       for (const chunk of options.chunks) request.emit('data', chunk)
@@ -212,12 +216,15 @@ test('PUT rejects a body that is not {themes: []}', async () => {
   assert.equal((await call(route['/api/dsh-freestyle-theme/themes'], 'PUT', 'not json')).status, 400)
 })
 
-test('PUT rejects an oversized body and tears the stream down', async () => {
+test('PUT rejects an oversized body and lets the 413 out', async () => {
   const huge = { themes: [], padding: 'x'.repeat(140 * 1024) }
   const response = await call(route['/api/dsh-freestyle-theme/themes'], 'PUT', huge)
   assert.equal(response.status, 413)
   assert.equal(response.body.code, 'too-large')
-  assert.equal(response.request.destroyed, true, 'the socket is destroyed, not drained')
+  // Draining beats destroying: a destroyed socket can never deliver the 413.
+  assert.equal(response.request.destroyed, false, 'the socket is drained, not destroyed')
+  assert.equal(response.request.resumed, true, 'the rest of the body is drained')
+  assert.equal(response.headers.get('connection'), 'close', 'the refused stream is closed after answering')
 })
 
 test('a body split mid-character still decodes as UTF-8', async () => {
@@ -245,6 +252,17 @@ test('two overlapping saves cannot corrupt the library', async () => {
 
   const files = await readdir(join(home, 'freestyle-theme'))
   assert.deepEqual(files, ['themes.json'], 'no temp file survives either writer')
+})
+
+test('a rebinding host is refused even when origin agrees with it', async () => {
+  // Origin and Host matching is not enough: rebinding makes both the attacker's
+  // name, so the Host must be loopback on its own.
+  const rebound = await call(route['/api/dsh-freestyle-theme/generate'], 'POST', { prompt: 'x' }, {
+    headers: { host: 'evil.example:60880', origin: 'http://evil.example:60880' },
+  })
+  assert.equal(rebound.status, 403)
+  assert.equal(rebound.body.code, 'host')
+  assert.equal(rebound.body.message, 'host must be loopback')
 })
 
 test('cross-origin and non-JSON callers are refused', async () => {

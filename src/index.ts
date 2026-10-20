@@ -10,7 +10,7 @@
  */
 
 import { randomUUID } from 'node:crypto'
-import { mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 
@@ -28,6 +28,7 @@ const NAME_ROUTE = `${API}/name`
 /** Upper bounds: the library is a convenience, not a database. */
 const MAX_THEMES = 120
 const MAX_BODY = 128 * 1024
+const MAX_LIBRARY_BYTES = 2 * 1024 * 1024
 const MAX_CANDIDATES = 6
 const MAX_REPLY = 40000
 
@@ -46,6 +47,7 @@ interface IncomingRequest {
   on(event: 'error', handler: (error: unknown) => void): void
   on(event: 'aborted', handler: () => void): void
   on(event: 'close', handler: () => void): void
+  resume?(): void
 }
 
 interface RouteLike {
@@ -88,6 +90,9 @@ function json(response: ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body)
   try {
     response.statusCode = status
+    // A refused body leaves unread bytes on the socket; close after answering
+    // so the client actually receives the 413 instead of a reset.
+    if (status === 413) response.setHeader('connection', 'close')
     response.setHeader('content-type', 'application/json; charset=utf-8')
     response.setHeader('cache-control', 'no-store')
     response.setHeader('referrer-policy', 'no-referrer')
@@ -111,12 +116,22 @@ function header(request: IncomingRequest, key: string): string {
  * tokens. Browsers always send `Origin` on such a request; a missing `Origin`
  * means curl or the test harness, which is fine on a loopback socket.
  */
+function isLoopbackHost(value: string): boolean {
+  const raw = value.trim().toLowerCase()
+  if (!raw) return false
+  const host = raw.startsWith('[') ? raw.slice(1, raw.indexOf(']')) : (raw.split(':')[0] ?? '')
+  return host === '127.0.0.1' || host === 'localhost' || host === '::1'
+}
+
 function crossSite(request: IncomingRequest): boolean {
+  const target = header(request, 'host')
+  // DNS rebinding can make Origin and Host agree on an attacker-controlled
+  // name that still resolves to loopback, so the Host itself must be local.
+  if (!isLoopbackHost(target)) return true
   const origin = header(request, 'origin')
   if (!origin) return false
   try {
-    const target = header(request, 'host')
-    return Boolean(target) && new URL(origin).host !== target
+    return new URL(origin).host !== target
   } catch {
     return true
   }
@@ -129,6 +144,10 @@ function wrongContentType(request: IncomingRequest): boolean {
 
 /** True when the request was refused (and answered) here. */
 function guard(request: IncomingRequest, response: ServerResponse): boolean {
+  if (!isLoopbackHost(header(request, 'host'))) {
+    json(response, 403, { ok: false, code: 'host', message: 'host must be loopback' })
+    return true
+  }
   if (crossSite(request)) {
     json(response, 403, { ok: false, code: 'origin', message: 'cross-origin request refused' })
     return true
@@ -178,8 +197,10 @@ function readBody(request: IncomingRequest): Promise<BodyResult> {
       size += chunk.length
       if (size > MAX_BODY) {
         finish({ tooLarge: true })
+        // Drain rather than destroy: the socket has to survive long enough to
+        // deliver the 413 that explains the refusal.
         try {
-          request.destroy?.()
+          request.resume?.()
         } catch {
           /* already gone */
         }
@@ -296,6 +317,13 @@ async function themesRoute(request: IncomingRequest, response: ServerResponse): 
 
   if (request.method === 'GET') {
     try {
+      // The write path is bounded; the read path must be too, or a corrupted
+      // or symlinked file would be loaded into memory wholesale.
+      const info = await stat(file)
+      if (info.size > MAX_LIBRARY_BYTES) {
+        json(response, 500, { ok: false, code: 'io', message: 'library too large' })
+        return
+      }
       const raw = await readFile(file, 'utf8')
       const parsed = JSON.parse(raw) as { themes?: unknown[] }
       const themes = Array.isArray(parsed.themes)
@@ -419,13 +447,13 @@ async function complete(
     })
     for await (const chunk of stream) {
       if (signal.aborted) return { text: '', code: 'aborted' }
-      if (chunk.type === 'text-delta') text += chunk.text ?? chunk.delta ?? ''
-      else if (chunk.type === 'finish' && (chunk.reason?.kind === 'error' || chunk.reason?.kind === 'aborted')) {
+      if (chunk.type === 'text-delta') {
+        text += chunk.text ?? chunk.delta ?? ''
+        if (text.length > MAX_REPLY) return { text: '', code: 'llm' }
+      } else if (chunk.type === 'finish' && (chunk.reason?.kind === 'error' || chunk.reason?.kind === 'aborted')) {
         return { text: '', code: 'llm' }
       }
     }
-    return { text }
-    if (text.length > MAX_REPLY) return { text: '', code: 'llm' }
     return { text }
   } catch {
     return { text: '', code: 'llm' }

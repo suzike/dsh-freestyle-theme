@@ -13,6 +13,7 @@ declare module 'node:fs/promises' {
   export function mkdir(path: string, options: { recursive: boolean }): Promise<string | undefined>
   export function rename(from: string, to: string): Promise<void>
   export function unlink(path: string): Promise<void>
+  export function stat(path: string): Promise<{ size: number }>
 }
 
 declare module 'node:crypto' {

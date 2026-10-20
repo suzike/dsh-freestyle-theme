@@ -760,7 +760,7 @@ function fromWire(wire: Record<string, unknown>): ThemeSpec {
 export function encodeShare(spec: ThemeSpec, name?: string): string {
   const payload: Record<string, unknown> = { ...toWire(spec) }
   if (name) payload.nm = name.slice(0, 40)
-  return b64url.encode(JSON.stringify(payload))
+  return 'dsh-freestyle-theme://' + b64url.encode(JSON.stringify(payload))
 }
 
 /** Decode a share code (or a pasted custom-scheme link) back into a spec. */

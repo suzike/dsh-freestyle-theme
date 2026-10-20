@@ -210,7 +210,7 @@ export function apply(ctx: PluginContext): void {
 
   slots.inject('settings.general.item', () => {
     register(
-      { name: 'settings.general.item', id: ROW_ID, order: 60, label: 'Dsh-freestyle-theme' },
+      { name: 'settings.general.item', id: ROW_ID, order: 60 },
       () => <SettingsRow ctx={ctx} t={t} theme={theme} owner={owner} />,
     )
   })
