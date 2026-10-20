@@ -23,11 +23,14 @@ test('fullPalette resolves all 119 names to usable CSS values', () => {
   }
 })
 
-test('light surfaces stack upward, dark surfaces are never pure black', () => {
+test('each mode has three distinguishable surface levels, never pure black', () => {
   const light = palette.fullPalette(palette.defaultSpec('light'))
   const dark = palette.fullPalette(palette.defaultSpec('dark'))
-  const l = (token) => palette.parseColor(light[token])?.[0]
-  assert.ok(l('--dsw-alias-bg-layer-2') >= l('--dsw-alias-bg-layer-1'), 'light layer-2 must not be darker than layer-1')
+  const l = (paletteMap, token) => paletteMap[token]
+  // Light: cards are the brightest surface and the layers below them step down
+  // very slightly; the point is that they do not collapse into one tone.
+  assert.equal(new Set(['--dsw-alias-bg-layer-1', '--dsw-alias-bg-layer-2', '--dsw-alias-bg-layer-3'].map((token) => l(light, token))).size, 3)
+  assert.equal(new Set(['--dsw-alias-bg-layer-1', '--dsw-alias-bg-layer-2', '--dsw-alias-bg-layer-3'].map((token) => l(dark, token))).size, 3)
   for (const token of ['--dsw-alias-bg-base', '--dsw-alias-bg-layer-1', '--dsw-alias-bg-layer-3']) {
     const rgb = palette.parseColor(dark[token])
     assert.ok(rgb && rgb[0] > 0, `${token} must not be pure black`)

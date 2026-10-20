@@ -60,12 +60,33 @@ interface Rgba {
   a: number
 }
 
-/** Parse a CSS colour (hex or rgb/rgba) into channels + alpha. */
+/** Parse a CSS colour (hex, #rrggbbaa, rgb()/rgba(), comma or slash) into channels + alpha. */
 export function toRgba(value: string): Rgba | null {
-  const rgb = parseColor(value)
+  const text = value.trim()
+  const hex = /^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(text)
+  if (hex) {
+    const digits = hex[1]
+    const step = digits.length <= 4 ? 1 : 2
+    const read = (index: number): number => {
+      const part = digits.slice(index * step, index * step + step)
+      const whole = step === 1 ? part + part : part
+      return Math.min(255, Math.max(0, parseInt(whole, 16)))
+    }
+    const alpha = digits.length === 4 || digits.length === 8 ? read(3) / 255 : 1
+    return { r: read(0), g: read(1), b: read(2), a: alpha }
+  }
+  const rgb = parseColor(text)
   if (!rgb) return null
-  const alpha = /^rgba?\([^)]*,\s*([\d.]+)\s*\)$/i.exec(value.trim())
-  return { r: rgb[0], g: rgb[1], b: rgb[2], a: alpha ? clamp(parseFloat(alpha[1]), 0, 1) : 1 }
+  // Match the trailing alpha of rgb()/rgba(), tolerating `, a` and `/ a`.
+  const alpha = /rgba?\([^)]*[,/]\s*([\d.]+%?)\s*\)$/i.exec(text)
+  const raw = alpha ? alpha[1] : undefined
+  const parsed = raw ? (raw.endsWith('%') ? parseFloat(raw) / 100 : parseFloat(raw)) : 1
+  return {
+    r: Math.min(255, Math.max(0, rgb[0])),
+    g: Math.min(255, Math.max(0, rgb[1])),
+    b: Math.min(255, Math.max(0, rgb[2])),
+    a: clamp(Number.isFinite(parsed) ? parsed : 1, 0, 1),
+  }
 }
 
 const linear = (channel: number): number => {
@@ -145,8 +166,8 @@ export const AUDIT_PAIRS: readonly PairDef[] = [
   { id: 'body.card', fg: '--dsw-alias-label-primary', bg: '--dsw-alias-settings-card-fill', kind: 'body', fix: 'text' },
   { id: 'secondary.base', fg: '--dsw-alias-label-secondary', bg: '--dsw-alias-bg-base', kind: 'secondary', fix: 'text' },
   { id: 'secondary.layer2', fg: '--dsw-alias-label-secondary', bg: '--dsw-alias-bg-layer-2', kind: 'secondary', fix: 'text' },
-  { id: 'tertiary.base', fg: '--dsw-alias-label-tertiary', bg: '--dsw-alias-bg-base', kind: 'large', fix: 'text' },
-  { id: 'caption.base', fg: '--dsw-alias-label-caption', bg: '--dsw-alias-bg-base', kind: 'large', fix: 'text' },
+  { id: 'tertiary.base', fg: '--dsw-alias-label-tertiary', bg: '--dsw-alias-bg-base', kind: 'secondary', fix: 'text' },
+  { id: 'caption.base', fg: '--dsw-alias-label-caption', bg: '--dsw-alias-bg-base', kind: 'secondary', fix: 'text' },
   { id: 'link.base', fg: '--dsw-alias-link', bg: '--dsw-alias-bg-base', kind: 'secondary', fix: 'accent' },
   { id: 'button.primary', fg: '--dsw-alias-label-primary-foreground', bg: '--dsw-alias-button-primary-fill', kind: 'secondary', fix: 'accent' },
   { id: 'button.contrast', fg: '--dsw-alias-label-primary-foreground', bg: '--dsw-alias-button-contrast-fill', kind: 'secondary', fix: 'accent' },
@@ -156,6 +177,9 @@ export const AUDIT_PAIRS: readonly PairDef[] = [
   { id: 'state.success', fg: '--dsw-alias-state-success-primary', bg: '--dsw-alias-bg-base', kind: 'ui', fix: 'state' },
   { id: 'state.warn', fg: '--dsw-alias-state-warn-primary', bg: '--dsw-alias-bg-base', kind: 'ui', fix: 'state' },
   { id: 'state.error', fg: '--dsw-alias-state-error-primary', bg: '--dsw-alias-bg-base', kind: 'ui', fix: 'state' },
+  // The error toast paints white text ON the error colour — the reverse of the
+  // pair above, and the one that actually ships.
+  { id: 'state.errorToast', fg: '--dsw-alias-state-error-secondary', bg: '--dsw-alias-toast-bg', kind: 'secondary', fix: 'state' },
   { id: 'diff.added', fg: '--dsw-alias-file-diff-added-marker', bg: '--dsw-alias-file-diff-added-bg', kind: 'ui', fix: 'state' },
   { id: 'icon.menu', fg: '--dsw-alias-menu-icon', bg: '--dsw-alias-menu-group-header-fill', kind: 'ui', fix: 'surface' },
 ]
@@ -168,8 +192,11 @@ export function auditPalette(palette: Palette): PairResult[] {
     // Translucent surfaces are composited over the base so the number means
     // something (a 58%-alpha menu over a light page is not "white").
     const bg = withAlphaOver(bgToken, palette['--dsw-alias-bg-base'] ?? '#ffffff')
-    const ratio = +contrastRatio(fg, bg).toFixed(2)
-    const lc = +Math.abs(apcaLc(fg, bg)).toFixed(1)
+    // Foreground alpha counts too: a 6%-alpha border reports a fantasy 13:1
+    // unless it is composited before measuring.
+    const fgSolid = withAlphaOver(fg, bg)
+    const ratio = +contrastRatio(fgSolid, bg).toFixed(2)
+    const lc = +Math.abs(apcaLc(fgSolid, bg)).toFixed(1)
     const threshold = THRESHOLDS[def.kind]
     return {
       id: def.id,
@@ -220,32 +247,50 @@ export function autoFixContrast(
   let current = { ...spec }
   let steps = 0
 
+  // A knob already pinned at its limit cannot move: skipping it (instead of
+  // re-applying the same clamped value) lets the next lever take over, so a
+  // fix always makes progress or stops honestly.
+  const stuck = { text: false, accent: false, surface: false }
+
   for (; steps < maxSteps; steps++) {
     const results = auditPalette(fullPalette(current))
     const failing = results.filter((result) => !result.pass)
     if (failing.length === 0) break
 
     const targets = new Set(failing.map((result) => result.fix))
-    if (targets.has('text')) {
-      current = { ...current, tx: clamp(current.tx + textStep, 0.03, 0.99) }
-      // Caption/tertiary follow tx, but a very light theme can still starve
-      // them; compress the ladder by lifting tx further rather than clipping.
-      continue
+    if (targets.has('text') && !stuck.text) {
+      const next = clamp(current.tx + textStep, 0.03, 0.99)
+      if (next === current.tx) stuck.text = true
+      else {
+        current = { ...current, tx: next }
+        continue
+      }
     }
-    if (targets.has('accent')) {
-      current = { ...current, l1: clamp(current.l1 + accentStep, 0.2, 0.95) }
-      continue
+    if (targets.has('accent') && !stuck.accent) {
+      const next = clamp(current.l1 + accentStep, 0.2, 0.95)
+      if (next === current.l1) stuck.accent = true
+      else {
+        current = { ...current, l1: next }
+        continue
+      }
     }
-    if (targets.has('surface')) {
-      current = { ...current, bg: clamp(current.bg - textStep * 0.6, 0.03, 0.995) }
-      continue
+    if (targets.has('surface') && !stuck.surface) {
+      const next = clamp(current.bg - textStep * 0.6, 0.03, 0.995)
+      if (next === current.bg) stuck.surface = true
+      else {
+        current = { ...current, bg: next }
+        continue
+      }
     }
-    // Only state colours left: brighten/darken them by boosting chroma is not
-    // enough, so nudge the state cluster through the lightness of the base.
+    // Only state colours left: nudge the state cluster through the page base.
     const needsState = failing.some((result) => result.fix === 'state')
-    if (needsState) {
-      current = { ...current, bg: clamp(current.bg - textStep * 0.4, 0.03, 0.995) }
-      continue
+    if (needsState && !stuck.surface) {
+      const next = clamp(current.bg - textStep * 0.4, 0.03, 0.995)
+      if (next === current.bg) stuck.surface = true
+      else {
+        current = { ...current, bg: next }
+        continue
+      }
     }
     break
   }

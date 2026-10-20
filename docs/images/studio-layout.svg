@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 620" width="1120" height="620" role="img" aria-labelledby="slTitle slDesc">
+  <title id="slTitle">Studio layout</title>
+  <desc id="slDesc">A 1120 by 620 wireframe of the full-window studio: top bar, icon rail, template list, live canvas and inspector.</desc>
+  <defs>
+    <linearGradient id="slHue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f43f5e"/><stop offset=".3" stop-color="#f59e0b"/>
+      <stop offset=".5" stop-color="#10b981"/><stop offset=".7" stop-color="#0ea5e9"/><stop offset="1" stop-color="#a855f7"/>
+    </linearGradient>
+    <linearGradient id="slBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101a17"/><stop offset="1" stop-color="#0b1210"/>
+    </linearGradient>
+    <linearGradient id="slPv" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fbf9"/><stop offset="1" stop-color="#eef3f0"/>
+    </linearGradient>
+    <style>
+      .ln { fill: none; stroke: #2b3a34; stroke-width: 1; }
+      .lbl { font-family: ui-monospace, Consolas, monospace; font-size: 10.5px; fill: #7d8f88; }
+      .cap { font-family: ui-sans-serif, "Segoe UI", "PingFang SC", sans-serif; font-size: 11px; fill: #9fb3ab; }
+      .dim { font-family: ui-monospace, Consolas, monospace; font-size: 10px; fill: #5f7169; }
+    </style>
+  </defs>
+
+  <rect width="1120" height="620" fill="#0b1210"/>
+  <rect x="24" y="24" width="1072" height="556" rx="16" fill="url(#slBg)" stroke="#2b3a34"/>
+
+  <!-- top bar -->
+  <rect x="40" y="40" width="1040" height="52" rx="10" fill="#16211d" stroke="#2b3a34"/>
+  <circle cx="64" cy="66" r="5" fill="#8af0c6"/>
+  <rect x="80" y="59" width="96" height="14" rx="7" fill="#22312c"/>
+  <rect x="186" y="57" width="44" height="18" rx="9" fill="#123a2e" stroke="#2f6b53"/>
+  <text x="208" y="70" text-anchor="middle" class="dim" fill="#8af0c6">7.4:1</text>
+  <g transform="translate(560 55)">
+    <rect width="132" height="22" rx="11" fill="#22312c"/>
+    <rect width="64" height="22" rx="11" fill="#2f6b53"/>
+    <text x="32" y="15" text-anchor="middle" class="dim" fill="#e9fff7">浅色</text>
+    <text x="98" y="15" text-anchor="middle" class="dim" fill="#7d8f88">深色</text>
+  </g>
+  <g transform="translate(700 55)">
+    <rect width="26" height="22" rx="7" fill="#22312c"/><rect x="30" width="26" height="22" rx="7" fill="#22312c"/>
+    <rect x="66" width="72" height="22" rx="11" fill="#22312c"/><rect x="144" width="72" height="22" rx="11" fill="#2f6b53"/>
+    <text x="108" y="15" text-anchor="middle" class="dim" fill="#9fb3ab">分享</text>
+    <text x="180" y="15" text-anchor="middle" class="dim" fill="#04140e">应用</text>
+  </g>
+  <text x="1064" y="70" text-anchor="end" class="dim">Esc</text>
+
+  <!-- icon rail -->
+  <rect x="40" y="104" width="64" height="456" rx="10" fill="#131f1b" stroke="#2b3a34"/>
+  <g transform="translate(52 120)">
+    <rect width="40" height="34" rx="8" fill="#1d3a30" stroke="#2f6b53"/>
+    <rect y="46" width="40" height="34" rx="8" fill="#1a2723"/>
+    <rect y="92" width="40" height="34" rx="8" fill="#1a2723"/>
+    <rect y="138" width="40" height="34" rx="8" fill="#1a2723"/>
+    <rect y="184" width="40" height="34" rx="8" fill="#1a2723"/>
+  </g>
+  <text x="72" y="546" text-anchor="middle" class="dim">rail</text>
+
+  <!-- template list -->
+  <rect x="116" y="104" width="216" height="456" rx="10" fill="#131f1b" stroke="#2b3a34"/>
+  <text x="132" y="130" class="cap">模板 · 12</text>
+  <rect x="132" y="142" width="184" height="26" rx="8" fill="#1a2723" stroke="#2b3a34"/>
+  <text x="142" y="159" class="dim">搜索…</text>
+  <g transform="translate(132 180)">
+    <g>
+      <rect width="184" height="46" rx="9" fill="#1d3a30" stroke="#2f6b53"/>
+      <rect x="10" y="10" width="26" height="26" rx="7" fill="#137b5e"/><rect x="14" y="14" width="8" height="18" rx="3" fill="#f8fbf9"/><rect x="25" y="14" width="8" height="18" rx="3" fill="#8af0c6"/>
+      <text x="46" y="20" class="cap" fill="#e9fff7">雾林</text><text x="46" y="34" class="dim">168° · analogous</text>
+    </g>
+    <g transform="translate(0 54)"><rect width="184" height="46" rx="9" fill="#16211d" stroke="#26332e"/><rect x="10" y="10" width="26" height="26" rx="7" fill="#3b4a8f"/><text x="46" y="20" class="cap">墨蓝</text><text x="46" y="34" class="dim">250° · split</text></g>
+    <g transform="translate(0 108)"><rect width="184" height="46" rx="9" fill="#16211d" stroke="#26332e"/><rect x="10" y="10" width="26" height="26" rx="7" fill="#8a5a2b"/><text x="46" y="20" class="cap">苔原</text><text x="46" y="34" class="dim">150° · triadic</text></g>
+    <g transform="translate(0 162)"><rect width="184" height="46" rx="9" fill="#16211d" stroke="#26332e"/><rect x="10" y="10" width="26" height="26" rx="7" fill="#8f2f38"/><text x="46" y="20" class="cap">熔岩</text><text x="46" y="34" class="dim">35° · complementary</text></g>
+  </g>
+  <line x1="132" y1="470" x2="316" y2="470" stroke="#26332e"/>
+  <text x="132" y="492" class="cap">我的主题</text>
+  <text x="132" y="516" class="dim">保存在 ~/.dsh/freestyle-theme/themes.json</text>
+
+  <!-- canvas -->
+  <rect x="344" y="104" width="536" height="456" rx="10" fill="#131f1b" stroke="#2b3a34"/>
+  <g transform="translate(360 116)">
+    <rect width="72" height="24" rx="12" fill="#22312c" stroke="#2b3a34"/>
+    <text x="36" y="16" text-anchor="middle" class="dim">对话</text>
+    <rect x="76" width="72" height="24" rx="12" fill="#22312c" stroke="#2b3a34"/>
+    <text x="112" y="16" text-anchor="middle" class="dim">列表</text>
+    <rect x="152" width="72" height="24" rx="12" fill="#22312c" stroke="#2b3a34"/>
+    <text x="188" y="16" text-anchor="middle" class="dim">表单</text>
+    <rect x="404" width="52" height="24" rx="8" fill="#22312c"/><text x="430" y="16" text-anchor="middle" class="dim">− 100% +</text>
+  </g>
+  <!-- preview frame -->
+  <rect x="420" y="164" width="384" height="320" rx="12" fill="url(#slPv)" stroke="#33443d"/>
+  <rect x="420" y="164" width="104" height="320" fill="#eef3f0"/>
+  <circle cx="444" cy="188" r="8" fill="#137b5e"/>
+  <rect x="434" y="208" width="76" height="20" rx="6" fill="#137b5e"/><text x="442" y="222" font-family="ui-sans-serif" font-size="9" fill="#f8fbf9">对话</text>
+  <rect x="434" y="234" width="76" height="16" rx="6" fill="#dbe7e1"/>
+  <rect x="434" y="256" width="76" height="16" rx="6" fill="#dbe7e1"/>
+  <rect x="536" y="178" width="252" height="18" rx="6" fill="#ffffff" stroke="#dbe7e1"/>
+  <rect x="548" y="212" width="180" height="30" rx="10" fill="#e5e9e5"/>
+  <rect x="548" y="256" width="216" height="88" rx="10" fill="#ffffff" stroke="#dbe7e1"/>
+  <rect x="560" y="268" width="140" height="8" rx="4" fill="#dbe7e1"/>
+  <rect x="560" y="284" width="188" height="8" rx="4" fill="#eef3f0"/>
+  <rect x="560" y="300" width="120" height="8" rx="4" fill="#eef3f0"/>
+  <rect x="560" y="318" width="176" height="18" rx="5" fill="#e3e7e4"/>
+  <rect x="536" y="360" width="252" height="28" rx="10" fill="#ffffff" stroke="#dbe7e1"/>
+  <rect x="748" y="364" width="32" height="20" rx="8" fill="#137b5e"/>
+  <text x="588" y="500" text-anchor="middle" class="dim">真实组件画布 · 全部用候选令牌上色</text>
+
+  <!-- inspector -->
+  <rect x="896" y="104" width="184" height="456" rx="10" fill="#131f1b" stroke="#2b3a34"/>
+  <text x="912" y="130" class="cap">检查器</text>
+  <text x="912" y="152" class="dim">色彩</text>
+  <g transform="translate(912 160)">
+    <rect width="152" height="6" rx="3" fill="url(#slHue)"/>
+    <g transform="translate(0 16)">
+      <rect width="152" height="10" rx="5" fill="#22312c"/><rect width="64" height="10" rx="5" fill="#2f6b53"/>
+      <text y="26" class="dim">色相 168°</text>
+      <rect y="34" width="152" height="10" rx="5" fill="#22312c"/><rect y="34" width="92" height="10" rx="5" fill="#2f6b53"/>
+      <text y="60" class="dim">彩度 0.12</text>
+      <rect y="68" width="152" height="10" rx="5" fill="#22312c"/><rect y="68" width="108" height="10" rx="5" fill="#2f6b53"/>
+      <text y="94" class="dim">明度 0.52</text>
+    </g>
+  </g>
+  <text x="912" y="304" class="cap">对比度 · 21 对</text>
+  <text x="1056" y="304" text-anchor="end" class="dim" fill="#8af0c6">21/21</text>
+  <g transform="translate(912 314)">
+    <g><circle r="3" fill="#4ade80"/><text x="12" y="4" class="dim">正文 · 底</text><text x="140" y="4" text-anchor="end" class="dim">14.2</text></g>
+    <g transform="translate(0 18)"><circle r="3" fill="#4ade80"/><text x="12" y="4" class="dim">次要 · 卡片</text><text x="140" y="4" text-anchor="end" class="dim">7.4</text></g>
+    <g transform="translate(0 36)"><circle r="3" fill="#4ade80"/><text x="12" y="4" class="dim">按钮 · 主色</text><text x="140" y="4" text-anchor="end" class="dim">5.1</text></g>
+    <g transform="translate(0 54)"><circle r="3" fill="#fbbf24"/><text x="12" y="4" class="dim">链接 · 底</text><text x="140" y="4" text-anchor="end" class="dim">4.6</text></g>
+    <g transform="translate(0 72)"><circle r="3" fill="#4ade80"/><text x="12" y="4" class="dim">toast · 文字</text><text x="140" y="4" text-anchor="end" class="dim">9.8</text></g>
+  </g>
+  <rect x="912" y="412" width="152" height="28" rx="8" fill="#2f6b53"/>
+  <text x="988" y="430" text-anchor="middle" class="dim" fill="#04140e">一键修复</text>
+  <text x="912" y="470" class="dim">排版 · 圆角 · 阴影</text>
+  <text x="912" y="492" class="dim">色觉模拟 · 元素令牌</text>
+  <text x="912" y="530" text-anchor="end" class="dim">⌘K 命令面板</text>
+
+  <!-- callouts -->
+  <g transform="translate(24 592)">
+    <text x="0" y="0" class="lbl">顶栏 52 ｜ 图标栏 64 ｜ 模板 216 ｜ 画布自适应 ｜ 检查器 184 ｜ 全部落 4px 栅格，动效 120/180/240/320ms</text>
+  </g>
+</svg>

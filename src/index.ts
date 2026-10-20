@@ -9,7 +9,8 @@
  * @module dsh-freestyle-theme
  */
 
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
+import { mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 
@@ -28,6 +29,7 @@ const NAME_ROUTE = `${API}/name`
 const MAX_THEMES = 120
 const MAX_BODY = 128 * 1024
 const MAX_CANDIDATES = 6
+const MAX_REPLY = 40000
 
 interface ServerResponse {
   statusCode: number
@@ -37,10 +39,13 @@ interface ServerResponse {
 
 interface IncomingRequest {
   method?: string
+  headers?: Record<string, string | string[] | undefined>
+  destroy?(): void
   on(event: 'data', handler: (chunk: { length: number; toString(encoding: string): string }) => void): void
   on(event: 'end', handler: () => void): void
   on(event: 'error', handler: (error: unknown) => void): void
   on(event: 'aborted', handler: () => void): void
+  on(event: 'close', handler: () => void): void
 }
 
 interface RouteLike {
@@ -81,44 +86,119 @@ interface HostContext {
 
 function json(response: ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body)
-  response.statusCode = status
-  response.setHeader('content-type', 'application/json; charset=utf-8')
-  response.setHeader('cache-control', 'no-store')
-  response.setHeader('referrer-policy', 'no-referrer')
-  response.setHeader('x-content-type-options', 'nosniff')
-  response.end(payload)
+  try {
+    response.statusCode = status
+    response.setHeader('content-type', 'application/json; charset=utf-8')
+    response.setHeader('cache-control', 'no-store')
+    response.setHeader('referrer-policy', 'no-referrer')
+    response.setHeader('x-content-type-options', 'nosniff')
+    response.end(payload)
+  } catch {
+    /* the client went away mid-response; nothing left to tell it */
+  }
 }
 
-/** Read a JSON body, refusing anything larger than `MAX_BODY`. */
-function readBody(request: IncomingRequest): Promise<unknown> {
+function header(request: IncomingRequest, key: string): string {
+  const value = request.headers?.[key] ?? request.headers?.[key.toLowerCase()]
+  return Array.isArray(value) ? (value[0] ?? '') : (value ?? '')
+}
+
+/**
+ * Same-origin guard.
+ *
+ * Any page can POST here with `Content-Type: text/plain` and
+ * `mode: 'no-cors'` — no preflight — and `/generate` would spend real model
+ * tokens. Browsers always send `Origin` on such a request; a missing `Origin`
+ * means curl or the test harness, which is fine on a loopback socket.
+ */
+function crossSite(request: IncomingRequest): boolean {
+  const origin = header(request, 'origin')
+  if (!origin) return false
+  try {
+    const target = header(request, 'host')
+    return Boolean(target) && new URL(origin).host !== target
+  } catch {
+    return true
+  }
+}
+
+function wrongContentType(request: IncomingRequest): boolean {
+  if (request.method === 'GET') return false
+  return !header(request, 'content-type').toLowerCase().startsWith('application/json')
+}
+
+/** True when the request was refused (and answered) here. */
+function guard(request: IncomingRequest, response: ServerResponse): boolean {
+  if (crossSite(request)) {
+    json(response, 403, { ok: false, code: 'origin', message: 'cross-origin request refused' })
+    return true
+  }
+  if (wrongContentType(request)) {
+    json(response, 415, { ok: false, code: 'content-type', message: 'expected application/json' })
+    return true
+  }
+  return false
+}
+
+/**
+ * Cross-origin and wrong-content-type requests are refused before any body is
+ * read: both checks only look at headers, so a hostile page cannot even make
+ * the host allocate a buffer.
+ */
+function guarded(
+  handler: (request: IncomingRequest, response: ServerResponse) => void | Promise<void>,
+): (request: IncomingRequest, response: ServerResponse) => Promise<void> {
+  return async (request, response) => {
+    if (guard(request, response)) return
+    await handler(request, response)
+  }
+}
+
+type BodyResult = { tooLarge: false; value: unknown } | { tooLarge: true }
+
+/**
+ * Read a JSON body, refusing anything larger than `MAX_BODY`.
+ *
+ * Bytes are collected and decoded once: decoding each chunk separately splits
+ * multi-byte characters at TCP boundaries and silently replaces them with
+ * U+FFFD, which JSON.parse happily accepts.
+ */
+function readBody(request: IncomingRequest): Promise<BodyResult> {
   return new Promise((resolve) => {
+    const chunks: Buffer[] = []
     let size = 0
-    let aborted = false
-    const chunks: string[] = []
+    let settled = false
+    const finish = (result: BodyResult): void => {
+      if (settled) return
+      settled = true
+      resolve(result)
+    }
     request.on('data', (chunk) => {
-      if (aborted) return
+      if (settled) return
       size += chunk.length
       if (size > MAX_BODY) {
-        aborted = true
-        resolve(undefined)
+        finish({ tooLarge: true })
+        try {
+          request.destroy?.()
+        } catch {
+          /* already gone */
+        }
         return
       }
-      chunks.push(chunk.toString('utf8'))
+      chunks.push(Buffer.from(chunk))
     })
     request.on('end', () => {
-      if (aborted) return
-      if (chunks.length === 0) {
-        resolve(undefined)
-        return
-      }
+      if (settled) return
+      if (chunks.length === 0) return finish({ tooLarge: false, value: undefined })
       try {
-        resolve(JSON.parse(chunks.join('')))
+        finish({ tooLarge: false, value: JSON.parse(Buffer.concat(chunks).toString('utf8')) })
       } catch {
-        resolve(undefined)
+        finish({ tooLarge: false, value: undefined })
       }
     })
-    request.on('error', () => resolve(undefined))
-    request.on('aborted', () => resolve(undefined))
+    request.on('error', () => finish({ tooLarge: false, value: undefined }))
+    request.on('aborted', () => finish({ tooLarge: false, value: undefined }))
+    request.on('close', () => finish({ tooLarge: false, value: undefined }))
   })
 }
 
@@ -136,6 +216,24 @@ interface StoredTheme {
   updatedAt: number
 }
 
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+/** Keep the spec a flat JSON object: drop prototype keys, cap size. */
+function sanitiseSpec(raw: unknown): Record<string, unknown> | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const clean: Record<string, unknown> = {}
+  let kept = 0
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (FORBIDDEN_KEYS.has(key) || kept >= 48) continue
+    if (typeof value === 'string') clean[key] = value.slice(0, 64)
+    else if (typeof value === 'number' && Number.isFinite(value)) clean[key] = value
+    else if (typeof value === 'boolean') clean[key] = value
+    else continue
+    kept += 1
+  }
+  return kept > 0 ? clean : null
+}
+
 /** Accept only the fields the library understands, and coerce numbers. */
 function sanitiseTheme(raw: unknown): StoredTheme | null {
   if (!raw || typeof raw !== 'object') return null
@@ -145,20 +243,52 @@ function sanitiseTheme(raw: unknown): StoredTheme | null {
   const id = typeof value.id === 'string' ? value.id.trim().slice(0, 64) : ''
   const name = typeof value.name === 'string' ? value.name.trim().slice(0, 48) : ''
   if (!id || !name) return null
-  if (!value.spec || typeof value.spec !== 'object') return null
+  const spec = sanitiseSpec(value.spec)
+  if (!spec) return null
   const now = Date.now()
   const created = typeof value.createdAt === 'number' && Number.isFinite(value.createdAt) ? value.createdAt : now
   const updated = typeof value.updatedAt === 'number' && Number.isFinite(value.updatedAt) ? value.updatedAt : created
   return {
     id,
     name,
-    spec: value.spec as Record<string, unknown>,
+    spec,
     createdAt: created,
     updatedAt: updated,
   }
 }
 
 /* ── routes ─────────────────────────────────────────────────────────────── */
+
+/**
+ * One writer at a time.
+ *
+ * Two tabs saving at once used to interleave on the same temp file; the queue
+ * makes the write-then-rename sequence atomic per process.
+ */
+let writeQueue: Promise<unknown> = Promise.resolve()
+
+function serialised<T>(work: () => Promise<T>): Promise<T> {
+  const run = writeQueue.then(work, work)
+  writeQueue = run.then(
+    () => undefined,
+    () => undefined,
+  )
+  return run
+}
+
+/** `rename` can lose to a virus scanner or an indexer on Windows. */
+async function renameWithRetry(from: string, to: string): Promise<void> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await rename(from, to)
+      return
+    } catch (error) {
+      const code = (error as { code?: string }).code
+      if (attempt >= 2 || (code !== 'EPERM' && code !== 'EBUSY' && code !== 'EACCES')) throw error
+      await new Promise((resolve) => setTimeout(resolve, 40 * (attempt + 1)))
+    }
+  }
+}
 
 /** `GET`/`PUT /themes` — the shared library. */
 async function themesRoute(request: IncomingRequest, response: ServerResponse): Promise<void> {
@@ -172,8 +302,12 @@ async function themesRoute(request: IncomingRequest, response: ServerResponse): 
         ? parsed.themes.map(sanitiseTheme).filter((theme): theme is StoredTheme => theme !== null).slice(0, MAX_THEMES)
         : []
       json(response, 200, { ok: true, themes })
-    } catch {
-      json(response, 200, { ok: true, themes: [] })
+    } catch (error) {
+      // "No file yet" is a normal first run; anything else is a real fault and
+      // must not be disguised as an empty library.
+      const code = (error as { code?: string }).code
+      if (code === 'ENOENT') json(response, 200, { ok: true, themes: [] })
+      else json(response, 500, { ok: false, code: 'io', message: 'library unreadable' })
     }
     return
   }
@@ -183,21 +317,32 @@ async function themesRoute(request: IncomingRequest, response: ServerResponse): 
     return
   }
 
-  const body = (await readBody(request)) as { themes?: unknown[] } | undefined
-  if (!body || !Array.isArray(body.themes)) {
+  const body = await readBody(request)
+  if (body.tooLarge) {
+    json(response, 413, { ok: false, code: 'too-large', message: `body over ${MAX_BODY} bytes` })
+    return
+  }
+  const payload = body.value as { themes?: unknown[] } | undefined
+  if (!payload || !Array.isArray(payload.themes)) {
     json(response, 400, { ok: false, code: 'invalid', message: 'expected { themes: [] }' })
     return
   }
 
-  const themes = body.themes.map(sanitiseTheme).filter((theme): theme is StoredTheme => theme !== null).slice(0, MAX_THEMES)
+  const themes = payload.themes.map(sanitiseTheme).filter((theme): theme is StoredTheme => theme !== null).slice(0, MAX_THEMES)
   try {
-    await mkdir(dirname(file), { recursive: true })
-    const temporary = `${file}.${process.pid}.tmp`
-    await writeFile(temporary, JSON.stringify({ version: 1, themes }, null, 2), 'utf8')
-    await rename(temporary, file)
+    await serialised(async () => {
+      await mkdir(dirname(file), { recursive: true })
+      const temporary = `${file}.${process.pid}.${randomUUID()}.tmp`
+      try {
+        await writeFile(temporary, JSON.stringify({ version: 1, themes }, null, 2), 'utf8')
+        await renameWithRetry(temporary, file)
+      } finally {
+        await unlink(temporary).catch(() => undefined)
+      }
+    })
     json(response, 200, { ok: true, saved: themes.length })
-  } catch (error) {
-    json(response, 500, { ok: false, code: 'io', message: error instanceof Error ? error.message : 'write failed' })
+  } catch {
+    json(response, 500, { ok: false, code: 'io', message: 'library write failed' })
   }
 }
 
@@ -252,16 +397,17 @@ async function complete(
   system: string,
   user: string,
   maxTokens: number,
+  signal: AbortSignal,
 ): Promise<{ text: string; code?: string }> {
-  const llm = ctx.get('llm') as LlmService | undefined
-  if (!llm?.stream) return { text: '', code: 'no-llm' }
-  const selection = (ctx.get('agentDefaultModel') as SelectionService | undefined)?.currentSelection?.()
-  const provider = selection?.provider ?? selection?.providerId
-  const model = selection?.model ?? selection?.modelId
-  if (!provider || !model) return { text: '', code: 'no-model' }
-
-  let text = ''
   try {
+    const llm = ctx.get('llm') as LlmService | undefined
+    if (!llm?.stream) return { text: '', code: 'no-llm' }
+    const selection = (ctx.get('agentDefaultModel') as SelectionService | undefined)?.currentSelection?.()
+    const provider = selection?.provider ?? selection?.providerId
+    const model = selection?.model ?? selection?.modelId
+    if (!provider || !model) return { text: '', code: 'no-model' }
+
+    let text = ''
     const stream = llm.stream({
       provider,
       model,
@@ -269,17 +415,31 @@ async function complete(
       messages: [{ role: 'user', content: [{ type: 'text', text: user }] }],
       temperature: 0.8,
       maxTokens,
+      signal,
     })
     for await (const chunk of stream) {
+      if (signal.aborted) return { text: '', code: 'aborted' }
       if (chunk.type === 'text-delta') text += chunk.text ?? chunk.delta ?? ''
       else if (chunk.type === 'finish' && (chunk.reason?.kind === 'error' || chunk.reason?.kind === 'aborted')) {
         return { text: '', code: 'llm' }
       }
     }
     return { text }
+    if (text.length > MAX_REPLY) return { text: '', code: 'llm' }
+    return { text }
   } catch {
     return { text: '', code: 'llm' }
   }
+}
+
+/** Stop spending tokens when the tab that asked closes. */
+function abortOnClose(request: IncomingRequest): AbortSignal {
+  const controller = new AbortController()
+  const stop = (): void => controller.abort()
+  request.on('aborted', stop)
+  request.on('close', stop)
+  request.on('error', stop)
+  return controller.signal
 }
 
 /** `POST /generate` — description to candidates. */
@@ -288,19 +448,25 @@ async function generateRoute(ctx: HostContext, request: IncomingRequest, respons
     json(response, 405, { ok: false, code: 'method', message: 'use POST' })
     return
   }
-  const body = (await readBody(request)) as { prompt?: unknown; count?: unknown } | undefined
-  const prompt = typeof body?.prompt === 'string' ? body.prompt.trim().slice(0, 600) : ''
+  const body = await readBody(request)
+  if (body.tooLarge) {
+    json(response, 413, { ok: false, code: 'too-large', message: `body over ${MAX_BODY} bytes` })
+    return
+  }
+  const payload = body.value as { prompt?: unknown; count?: unknown } | undefined
+  const prompt = typeof payload?.prompt === 'string' ? payload.prompt.trim().slice(0, 600) : ''
   if (!prompt) {
     json(response, 400, { ok: false, code: 'invalid', message: 'prompt required' })
     return
   }
-  const count = Math.min(MAX_CANDIDATES, Math.max(1, Math.round(clampNumber(body?.count, 1, MAX_CANDIDATES, 4))))
+  const count = Math.min(MAX_CANDIDATES, Math.max(1, Math.round(clampNumber(payload?.count, 1, MAX_CANDIDATES, 4))))
 
   const { text, code } = await complete(
     ctx,
     GENERATE_SYSTEM,
     JSON.stringify({ request: prompt, count, language: 'the description may be Chinese' }),
     900,
+    abortOnClose(request),
   )
   if (!text) {
     json(response, 200, { ok: false, code: code ?? 'llm', candidates: [] })
@@ -329,18 +495,24 @@ async function nameRoute(ctx: HostContext, request: IncomingRequest, response: S
     json(response, 405, { ok: false, code: 'method', message: 'use POST' })
     return
   }
-  const body = (await readBody(request)) as { spec?: unknown; locale?: unknown } | undefined
-  if (!body?.spec || typeof body.spec !== 'object') {
+  const body = await readBody(request)
+  if (body.tooLarge) {
+    json(response, 413, { ok: false, code: 'too-large', message: `body over ${MAX_BODY} bytes` })
+    return
+  }
+  const payload = body.value as { spec?: unknown; locale?: unknown } | undefined
+  if (!payload?.spec || typeof payload.spec !== 'object') {
     json(response, 400, { ok: false, code: 'invalid', message: 'spec required' })
     return
   }
-  const locale = typeof body.locale === 'string' ? body.locale.slice(0, 20) : 'zh'
+  const locale = typeof payload.locale === 'string' ? payload.locale.slice(0, 20) : 'zh'
 
   const { text, code } = await complete(
     ctx,
     NAME_SYSTEM,
-    JSON.stringify({ spec: body.spec, language: locale.toLowerCase().startsWith('zh') ? 'Chinese' : 'English' }),
+    JSON.stringify({ spec: payload.spec, language: locale.toLowerCase().startsWith('zh') ? 'Chinese' : 'English' }),
     260,
+    abortOnClose(request),
   )
   if (!text) {
     json(response, 200, { ok: false, code: code ?? 'llm' })
@@ -364,26 +536,60 @@ async function nameRoute(ctx: HostContext, request: IncomingRequest, response: S
 
 /* ── registration ───────────────────────────────────────────────────────── */
 
+/** Wrapped so a rejected handler becomes a JSON 500, never a dead process. */
+function run(work: (request: IncomingRequest, response: ServerResponse) => Promise<void>) {
+  return (request: IncomingRequest, response: ServerResponse): void => {
+    void work(request, response).catch(() => {
+      json(response, 500, { ok: false, code: 'internal', message: 'handler failed' })
+    })
+  }
+}
+
+let registered: (() => void) | null = null
+
 export function apply(ctx: HostContext): void {
+  // Re-applying must not stack a second set of routes on the same paths.
+  if (registered) {
+    registered()
+    registered = null
+  }
+
   const routes: RouteLike[] = [
-    { kind: 'exact', path: THEMES_ROUTE, handler: (request, response) => void themesRoute(request, response) },
-    { kind: 'exact', path: GENERATE_ROUTE, handler: (request, response) => void generateRoute(ctx, request, response) },
-    { kind: 'exact', path: NAME_ROUTE, handler: (request, response) => void nameRoute(ctx, request, response) },
+    { kind: 'exact', path: THEMES_ROUTE, handler: run(guarded(themesRoute)) },
+    { kind: 'exact', path: GENERATE_ROUTE, handler: run(guarded((request, response) => generateRoute(ctx, request, response))) },
+    { kind: 'exact', path: NAME_ROUTE, handler: run(guarded((request, response) => nameRoute(ctx, request, response))) },
   ]
 
   const register = (): (() => void) => {
-    const disposers = routes.map((route) => ctx.webServer.register(route))
-    return () => {
-      for (const dispose of disposers) {
+    const disposers: Array<() => void> = []
+    const dispose = (): void => {
+      while (disposers.length > 0) {
         try {
-          dispose()
+          disposers.pop()?.()
         } catch {
           /* the server is shutting down */
         }
       }
     }
+    try {
+      for (const route of routes) disposers.push(ctx.webServer.register(route))
+    } catch (error) {
+      dispose()
+      throw error
+    }
+    return dispose
   }
 
-  if (typeof ctx.effect === 'function') ctx.effect(register, 'dsh-freestyle-theme: routes')
-  else register()
+  if (typeof ctx.effect === 'function') {
+    registered = register()
+    ctx.effect(() => {
+      const dispose = registered
+      return () => {
+        dispose?.()
+        registered = null
+      }
+    }, 'dsh-freestyle-theme: routes')
+  } else {
+    registered = register()
+  }
 }

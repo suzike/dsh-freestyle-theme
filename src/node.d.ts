@@ -12,6 +12,11 @@ declare module 'node:fs/promises' {
   export function writeFile(path: string, data: string, encoding: 'utf8'): Promise<void>
   export function mkdir(path: string, options: { recursive: boolean }): Promise<string | undefined>
   export function rename(from: string, to: string): Promise<void>
+  export function unlink(path: string): Promise<void>
+}
+
+declare module 'node:crypto' {
+  export function randomUUID(): string
 }
 
 declare module 'node:os' {
@@ -21,6 +26,14 @@ declare module 'node:os' {
 declare module 'node:path' {
   export function join(...segments: string[]): string
   export function dirname(path: string): string
+}
+
+/** Only the members the host half calls — deliberately not a Uint8Array subclass. */
+declare class Buffer {
+  static from(chunk: unknown): Buffer
+  static concat(chunks: readonly Buffer[]): Buffer
+  readonly length: number
+  toString(encoding: 'utf8'): string
 }
 
 declare const process: {

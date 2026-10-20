@@ -113,7 +113,7 @@ const srgbEncode = (value: number): number =>
   value <= 0.0031308 ? 12.92 * value : 1.055 * Math.pow(value, 1 / 2.4) - 0.055
 
 /** Convert one OKLCH triple into 8-bit sRGB channels. */
-export function oklchToRgb(l: number, c: number, h: number): [number, number, number] {
+function linearRgb(l: number, c: number, h: number): [number, number, number] {
   const rad = (h * Math.PI) / 180
   const a = c * Math.cos(rad)
   const b = c * Math.sin(rad)
@@ -124,7 +124,36 @@ export function oklchToRgb(l: number, c: number, h: number): [number, number, nu
     4.0767416621 * ll - 3.3077115913 * mm + 0.2309699292 * ss,
     -1.2684380046 * ll + 2.6097574011 * mm - 0.3413193965 * ss,
     -0.0041960863 * ll - 0.7034186147 * mm + 1.707614701 * ss,
-  ].map((value) => Math.round(clamp(srgbEncode(value), 0, 1) * 255)) as [number, number, number]
+  ]
+}
+
+/**
+ * Reduce chroma until the colour fits sRGB.
+ *
+ * Clipping the channels instead would slide the hue (a vivid yellow-green
+ * clipped to red), so the requested hue is preserved and only saturation gives
+ * way — the colour you picked stays the colour you picked.
+ */
+function inGamut(l: number, c: number, h: number): boolean {
+  return linearRgb(l, c, h).every((value) => value >= -0.0005 && value <= 1.0005)
+}
+
+export function gamutChroma(l: number, c: number, h: number): number {
+  if (c <= 0 || inGamut(l, c, h)) return c
+  let low = 0
+  let high = c
+  for (let step = 0; step < 14; step += 1) {
+    const mid = (low + high) / 2
+    if (inGamut(l, mid, h)) low = mid
+    else high = mid
+  }
+  return low
+}
+
+export function oklchToRgb(l: number, c: number, h: number): [number, number, number] {
+  return linearRgb(l, gamutChroma(l, c, h), h).map(
+    (value) => Math.round(clamp(srgbEncode(value), 0, 1) * 255),
+  ) as [number, number, number]
 }
 
 /** OKLCH → `#rrggbb`. */
@@ -240,9 +269,11 @@ export function fullPalette(spec: ThemeSpec): Palette {
   // upward, so the same rule is applied here — stretched by `spread`.
   const bgEff = light ? clamp(spec.bg - (k - 1) * 0.045, 0.88, 0.995) : spec.bg
   const sBase = bgEff
-  const sL1 = light ? Math.min(bgEff + 0.032 * k, 0.996) : clamp(bgEff + 0.035 * k, 0.02, 0.6)
-  const sL2 = light ? sL1 : clamp(bgEff + 0.06 * k, 0.02, 0.65)
-  const sL3 = light ? sL1 : clamp(bgEff + 0.085 * k, 0.02, 0.7)
+  // Light mode: cards stay pure white and elevation spreads downward from
+  // there, so layer-2/3 differ by a hair instead of collapsing into one tone.
+  const sL1 = light ? Math.min(bgEff + 0.032 * k, 0.998) : clamp(bgEff + 0.035 * k, 0.02, 0.6)
+  const sL2 = light ? Math.max(0.02, sL1 - 0.006 * k) : clamp(bgEff + 0.06 * k, 0.02, 0.65)
+  const sL3 = light ? Math.max(0.02, sL1 - 0.012 * k) : clamp(bgEff + 0.085 * k, 0.02, 0.7)
   const sOverlay = light
     ? Math.max(0.04, bgEff - 0.045 * k)
     : clamp(bgEff + 0.12 * k, 0.02, 0.8)
@@ -251,8 +282,10 @@ export function fullPalette(spec: ThemeSpec): Palette {
 
   // Foreground ladder.
   const i1 = tx
-  const i2 = light ? tx + 0.22 : tx - 0.17
-  const i3 = light ? tx + 0.38 : tx - 0.24
+  // The dark ladder is tighter than the light one: on a dark page, APCA falls
+  // off faster than WCAG, so tertiary keeps more of the primary's lightness.
+  const i2 = light ? tx + 0.22 : tx - 0.12
+  const i3 = light ? tx + 0.38 : tx - 0.18
   const i4 = light ? tx + 0.47 : tx - 0.24
   const iDim = light ? 0.9 : 0.34
 
@@ -329,7 +362,9 @@ export function fullPalette(spec: ThemeSpec): Palette {
     '--dsw-alias-interactive-bg-hover-solid': hex(light ? 0.9 : 0.26, surf(0.4), ths),
 
     // ── labels ─────────────────────────────────────────────────────────────
-    '--dsw-alias-label-caption': ink(i4),
+    // Caption is the smallest text on the page, so it keeps the tertiary
+    // contrast instead of adding a fourth, paler rung.
+    '--dsw-alias-label-caption': ink(i3),
     '--dsw-alias-label-dimmed': ink(iDim, -0.002),
     '--dsw-alias-label-primary': ink(i1),
     '--dsw-alias-label-primary-bluish': ink(i1),
@@ -388,7 +423,9 @@ export function fullPalette(spec: ThemeSpec): Palette {
     '--dsw-alias-state-business-primary': hex(l1, c1, th),
     '--dsw-alias-state-business-tertiary': rgba(l1, c1, th, light ? 0.14 : 0.22),
     '--dsw-alias-state-error-primary': hex(danger, st(0.17), 25),
-    '--dsw-alias-state-error-secondary': hex(dangerSoft, st(0.16), 25),
+    // Secondary error is the on-dark ink (toasts, banners over dark surfaces),
+    // so it stays light in both modes.
+    '--dsw-alias-state-error-secondary': hex(light ? 0.86 : 0.8, st(0.12), 25),
     '--dsw-alias-state-idle-primary': hex(light ? 0.72 : 0.55, chrome(0.006), ths),
     '--dsw-alias-state-success-primary': hex(success, st(0.15), 150),
     '--dsw-alias-state-success-secondary': hex(successSoft, st(0.14), 150),
@@ -476,7 +513,7 @@ export function makeSpec(
 
 /** Default specs for each mode. */
 export function defaultSpec(mode: ThemeMode): ThemeSpec {
-  return makeSpec(mode === 'light' ? 168 : 168, mode)
+  return makeSpec(168, mode)
 }
 
 /** Keep the colour axes and swap the mode-dependent defaults that were untouched. */
@@ -679,6 +716,7 @@ function toWire(spec: ThemeSpec): Record<string, number | string> {
     l: +spec.l1.toFixed(3),
     h2: Math.round(spec.th2),
     c2: +spec.c2.toFixed(3),
+    l2: +spec.l2.toFixed(3),
     hs: Math.round(spec.ths),
     s: +spec.sc.toFixed(4),
     b: +spec.bg.toFixed(3),
@@ -702,6 +740,7 @@ function fromWire(wire: Record<string, unknown>): ThemeSpec {
     l1: wire.l,
     th2: wire.h2,
     c2: wire.c2,
+    l2: wire.l2,
     ths: wire.hs,
     sc: wire.s,
     bg: wire.b,
@@ -732,9 +771,13 @@ export function decodeShare(text: string): { spec: ThemeSpec; name?: string } | 
     .replace(/^dsh-freestyle-theme:\/\//i, '')
   if (!raw) return null
   try {
-    const wire = JSON.parse(b64url.decode(raw)) as Record<string, unknown>
-    if (typeof wire !== 'object' || wire === null) return null
-    return { spec: fromWire(wire), name: typeof wire.nm === 'string' ? wire.nm : undefined }
+    const wire = JSON.parse(b64url.decode(raw)) as unknown
+    if (typeof wire !== 'object' || wire === null || Array.isArray(wire)) return null
+    const record = wire as Record<string, unknown>
+    // A share code is only meaningful when it carries our version stamp; any
+    // other object would silently normalize into the default theme.
+    if (record.v !== 3 || typeof record.m !== 'string') return null
+    return { spec: fromWire(record), name: typeof record.nm === 'string' ? record.nm.slice(0, 40) : undefined }
   } catch {
     return null
   }
@@ -743,7 +786,10 @@ export function decodeShare(text: string): { spec: ThemeSpec; name?: string } | 
 /** CSS variables for a spec pair, suitable for pasting into any stylesheet. */
 export function exportCss(light: ThemeSpec, dark: ThemeSpec): string {
   const toBlock = (spec: ThemeSpec, selector: string): string => {
-    const tokens = { ...fullPalette(spec), ...lookTokens(spec) }
+    // Flipping `mode` alone leaves the lightness defaults of the other mode in
+    // place; the exported dark block would still be near-white.
+    const normalised = switchMode(spec, selector === ':root' ? 'light' : 'dark')
+    const tokens = { ...fullPalette(normalised), ...lookTokens(normalised) }
     const body = Object.entries(tokens)
       .map(([key, value]) => `  ${key}: ${value};`)
       .join('\n')

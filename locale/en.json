@@ -1,4 +1,6 @@
 {
-  "title": "FreeStyle Theme",
-  "description": "A full-window theme studio: three-axis OKLCH mixing, instance-level live preview, dark compare, vision simulation, a 20-pair contrast audit with one-click fix, 12 coordinate presets, a theme library, image and prompt generation, and share codes — across all 119 --dsw- tokens."
+  "meta": {
+    "title": "FreeStyle theme studio",
+    "description": "Shape your DSH theme on an OKLCH four-axis model with 12 presets: full-window studio, faithful preview, contrast and colour-vision audit, image or prompt generation, a saved library and share links."
+  }
 }

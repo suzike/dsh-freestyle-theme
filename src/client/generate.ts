@@ -180,7 +180,10 @@ async function readPixels(file: File, size = 96): Promise<Uint8ClampedArray> {
   canvas.width = size
   canvas.height = size
   const context = canvas.getContext('2d', { willReadFrequently: true })
-  if (!context) throw new Error('canvas unavailable')
+  if (!context) {
+    bitmap.close()
+    throw new Error('canvas unavailable')
+  }
   // Cover-fit so we sample the subject, not letterboxing.
   const scale = Math.max(size / bitmap.width, size / bitmap.height)
   const drawWidth = bitmap.width * scale
@@ -348,7 +351,7 @@ export async function aiCandidates(
     const mode = (candidate.mode === 'dark' ? 'dark' : 'light') as ThemeMode
     const hue = typeof candidate.th === 'number' ? candidate.th : moodFor(prompt).hue
     specs.push(
-      makeSpec(hue, index % 2 === 1 && mode === 'light' ? 'light' : mode, {
+      makeSpec(hue, mode, {
         th2: typeof candidate.th2 === 'number' ? candidate.th2 : huesForHarmony(hue, 'analogous').th2,
         ths: typeof candidate.ths === 'number' ? candidate.ths : hue,
         c1: typeof candidate.c1 === 'number' ? clamp(candidate.c1, 0.02, 0.37) : 0.1,

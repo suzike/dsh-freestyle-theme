@@ -65,7 +65,8 @@ export const CSS = `
   border: var(--ft-hair) solid var(--dsw-alias-border-l2, rgba(0,0,0,.1));
   box-shadow: 0 1px 2px rgba(0,0,0,.06);
 }
-.ft-row-thumb i { position: absolute; display: block; }
+.ft-row-thumb { display: grid; grid-template-columns: 1fr 1fr; }
+.ft-row-thumb i { display: block; width: 100%; height: 100%; }
 .ft-row-main { flex: 1 1 auto; min-width: 0; }
 .ft-row-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
 .ft-row-hint {
@@ -97,7 +98,7 @@ export const CSS = `
     border-color var(--ft-dur-1) var(--ft-ease-in),
     transform var(--ft-dur-1) var(--ft-ease-in);
 }
-.ft-btn:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.05)); }
+.ft-btn:not([disabled]):hover { background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.05)); }
 .ft-btn:active { transform: scale(.97); }
 .ft-btn[disabled] { opacity: .45; cursor: not-allowed; transform: none; }
 .ft-btn-primary {
@@ -336,21 +337,17 @@ export const CSS = `
 .ft-card {
   position: relative;
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 9px;
   width: 100%;
-  padding: 7px 9px;
-  margin-bottom: 2px;
   border-radius: 9px;
-  text-align: left;
   transition: background var(--ft-dur-1) var(--ft-ease-in);
 }
 .ft-card:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(0,0,0,.05)); }
-.ft-card[aria-selected='true'] {
+.ft-card[data-selected='true'] {
   background: var(--dsw-specific-sidebar-nav-item-active, rgba(0,0,0,.07));
 }
-.ft-card[aria-selected='true']::after {
+.ft-card[data-selected='true']::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -359,6 +356,21 @@ export const CSS = `
   pointer-events: none;
   opacity: .55;
 }
+.ft-card-main {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ft-card-main:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary, #3b82f6); outline-offset: -2px; }
 .ft-card-sw {
   width: 34px;
   height: 34px;
@@ -369,7 +381,7 @@ export const CSS = `
   border: var(--ft-hair) solid var(--dsw-alias-border-l2, rgba(0,0,0,.08));
 }
 .ft-card-sw i { display: block; height: 100%; }
-.ft-card-main { min-width: 0; }
+.ft-card-main-text { min-width: 0; }
 .ft-card-name {
   font-size: 12.5px;
   font-weight: 500;
@@ -386,20 +398,35 @@ export const CSS = `
   white-space: nowrap;
 }
 .ft-card-del {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  border-radius: 5px;
-  display: none;
+  width: 28px;
+  height: 28px;
+  margin-right: 4px;
+  border-radius: 6px;
+  border: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
   color: var(--dsw-alias-state-error-primary, #dc2626);
-  background: var(--dsw-alias-bg-layer-1, #fff);
+  background: transparent;
+  cursor: pointer;
+  /* Hidden until the row is hovered or something inside it has focus, so it
+     stays reachable by keyboard and by touch. */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ft-dur-1) var(--ft-ease-in);
 }
-.ft-card:hover .ft-card-del { display: flex; }
+.ft-card:hover .ft-card-del,
+.ft-card:focus-within .ft-card-del,
+.ft-card-del:focus-visible { opacity: 1; pointer-events: auto; }
+.ft-card-del:hover { background: var(--dsw-alias-interactive-bg-hover-danger, rgba(220,38,38,.12)); }
+.ft-card-del[data-armed='true'] {
+  opacity: 1;
+  pointer-events: auto;
+  background: var(--dsw-alias-interactive-bg-hover-danger, rgba(220,38,38,.16));
+}
+@media (hover: none) {
+  .ft-card-del { opacity: 1; pointer-events: auto; }
+}
 .ft-group-label {
   padding: 10px 8px 4px;
   font-size: 10.5px;
@@ -451,6 +478,7 @@ export const CSS = `
   border-left: var(--ft-hair) solid var(--dsw-alias-border-l1, rgba(0,0,0,.08));
   background: var(--dsw-alias-bg-layer-1, #fff);
 }
+.ft-insp[hidden] { display: none; }
 .ft-insp-body { flex: 1 1 auto; overflow-y: auto; }
 .ft-sect { border-bottom: var(--ft-hair) solid var(--dsw-alias-border-l1, rgba(0,0,0,.07)); }
 .ft-sect-head {
@@ -489,8 +517,8 @@ export const CSS = `
 }
 .ft-chan-hex { margin-left: auto; font-size: 10.5px; color: var(--dsw-alias-label-tertiary, #9ca3af); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .ft-lock {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 6px;
   display: grid;
   place-items: center;
@@ -522,7 +550,8 @@ export const CSS = `
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 20px;
+  height: 28px;
+  touch-action: none;
   background: transparent;
   cursor: pointer;
 }
@@ -534,9 +563,9 @@ export const CSS = `
 .ft-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 13px;
-  height: 13px;
-  margin-top: -4.5px;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
   border-radius: 50%;
   background: var(--dsw-alias-switch-thumb, #fff);
   border: var(--ft-hair) solid var(--dsw-alias-border-l3, rgba(0,0,0,.2));
@@ -547,7 +576,7 @@ export const CSS = `
 .ft-range:active::-webkit-slider-thumb { transform: scale(1.2); }
 .ft-range::-moz-range-track { height: 4px; border-radius: 999px; background: var(--ft-track); }
 .ft-range::-moz-range-thumb {
-  width: 13px; height: 13px; border-radius: 50%;
+  width: 16px; height: 16px; border-radius: 50%;
   background: var(--dsw-alias-switch-thumb, #fff);
   border: var(--ft-hair) solid var(--dsw-alias-border-l3, rgba(0,0,0,.2));
 }
@@ -555,10 +584,12 @@ export const CSS = `
 /* hue bar (18 stops) */
 .ft-hues { display: grid; grid-template-columns: repeat(18, 1fr); gap: 2px; margin: 2px 0 4px; }
 .ft-hues button {
+  position: relative;
   height: 12px;
   border-radius: 3px;
   transition: transform var(--ft-dur-1) var(--ft-ease-in);
 }
+.ft-hues button::before { content: ''; position: absolute; inset: -8px 0; }
 .ft-hues button:hover { transform: scaleY(1.5); }
 .ft-hues button[aria-pressed='true'] { outline: 2px solid var(--dsw-alias-label-primary, #111); outline-offset: 1px; }
 
@@ -919,9 +950,16 @@ export const CSS = `
   top: -8px; bottom: -8px;
   left: var(--ft-split, 50%);
   width: 2px;
+  touch-action: none;
   background: var(--dsw-alias-brand-primary, #3b82f6);
   cursor: ew-resize;
   transform: translateX(-1px);
+}
+.ft-cmp-line::before {
+  content: '';
+  position: absolute;
+  inset: 0 -12px;
+  cursor: ew-resize;
 }
 .ft-cmp-line::after {
   content: '';
@@ -948,7 +986,7 @@ export const CSS = `
 
 /* inspect hotspot + tooltip */
 .ft-hot { position: relative; }
-.ft-hot[data-hit='true'] { outline: 1.5px dashed var(--dsw-alias-brand-primary, #3b82f6); outline-offset: 1px; border-radius: 4px; }
+.ft-pv[data-inspect='true'] .ft-hot:hover { outline: 1.5px dashed var(--dsw-alias-brand-primary, #3b82f6); outline-offset: 1px; border-radius: 4px; }
 .ft-inspect-tip {
   position: fixed;
   z-index: 2147483600;
@@ -1058,7 +1096,13 @@ export const CSS = `
   box-shadow: 0 10px 30px rgba(0,0,0,.3);
   animation: ft-toast-in var(--ft-dur-3) var(--ft-ease-in);
 }
-.ft-toast[data-tone='error'] { background: var(--dsw-alias-state-error-primary, #dc2626); color: #fff; }
+.ft-toast[data-tone='error'] {
+  /* Error colour as *ink*, not as fill: white on a light error red would land
+     around 3.2:1, below AA for a 12px label. */
+  background: var(--dsw-alias-toast-bg, #1f2937);
+  color: var(--dsw-alias-state-error-secondary, #fca5a5);
+  border: 1px solid var(--dsw-alias-state-error-secondary, #fca5a5);
+}
 
 /* ── generation panel ─────────────────────────────────────────────────── */
 .ft-gen { display: grid; gap: 8px; }
@@ -1085,6 +1129,31 @@ export const CSS = `
 .ft-drop img { max-width: 100%; max-height: 120px; border-radius: 8px; }
 .ft-proposals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 
+/* ── native surfaces (selection, scrollbars) ───────────────────────────── */
+.ft-root ::selection { background: var(--dsw-alias-interactive-bg-hover-accent, rgba(59,130,246,.28)); color: inherit; }
+.ft-studio, .ft-studio * { scrollbar-width: thin; scrollbar-color: var(--dsw-alias-scrollbar-hover-l1, rgba(0,0,0,.28)) transparent; }
+.ft-studio ::-webkit-scrollbar { width: 10px; height: 10px; }
+.ft-studio ::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+  background-color: var(--dsw-alias-scrollbar-hover-l1, rgba(0,0,0,.28));
+}
+.ft-studio ::-webkit-scrollbar-track { background: transparent; }
+
+/* busy spinner: rotation only, reduced-motion freezes it in place */
+.ft-spin {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: ft-spin 640ms linear infinite;
+}
+@keyframes ft-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ft-spin { animation: none; } }
+
 /* ── animations ───────────────────────────────────────────────────────── */
 @keyframes ft-fade-in { from { opacity: 0 } to { opacity: 1 } }
 @keyframes ft-fade-out { from { opacity: 1 } to { opacity: 0 } }
@@ -1092,22 +1161,32 @@ export const CSS = `
 @keyframes ft-toast-in { from { opacity: 0; transform: translate(-50%, 8px) } to { opacity: 1; transform: translate(-50%, 0) } }
 @keyframes ft-sweep { from { clip-path: circle(0% at 50% 50%) } to { clip-path: circle(140% at 50% 50%) } }
 
-.ft-sweep { animation: ft-sweep 420ms var(--ft-ease-in); }
+.ft-sweep { animation: ft-sweep var(--ft-dur-4) var(--ft-ease-in); }
 
 /* reduced motion: no movement, no fades — state appears instantly */
 @media (prefers-reduced-motion: reduce) {
-  .ft-root *, .ft-root *::before, .ft-root *::after {
+  .ft-root, .ft-root *, .ft-studio, .ft-studio *, .ft-root *::before, .ft-root *::after {
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
   }
 }
 
-/* narrow windows: fold the inspector under the canvas */
+/* Narrow windows: the inspector becomes an overlay drawer toggled from the
+   rail, instead of disappearing along with every colour control. */
 @media (max-width: 1080px) {
   .ft-body, .ft-body.rail-collapsed, .ft-body.no-inspector {
     grid-template-columns: 72px 200px minmax(0, 1fr);
   }
-  .ft-insp { display: none; }
+  .ft-insp {
+    position: fixed;
+    top: 56px;
+    right: 0;
+    bottom: 0;
+    width: min(340px, 92vw);
+    z-index: 4;
+    box-shadow: -16px 0 40px rgba(0, 0, 0, .18);
+    animation: ft-fade-in var(--ft-dur-2) var(--ft-ease-in);
+  }
 }
 `

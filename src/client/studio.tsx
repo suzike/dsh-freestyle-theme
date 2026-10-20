@@ -30,6 +30,7 @@ import {
   oklchToHex,
   presetSpec,
   PRESETS,
+  switchMode,
   type ChannelKey,
   type Palette,
   type ThemeSpec,
@@ -62,6 +63,8 @@ export interface StudioProps {
   initial: ThemeSpec
   /** Called after Apply, so the settings row can refresh its summary. */
   onApplied?: (spec: ThemeSpec, name: string) => void
+  /** Clear the applied override and its stored spec. */
+  onClear?: () => void
   onClose: () => void
 }
 
@@ -94,6 +97,7 @@ const Ico: FC<IconProps> = ({ name, size = 16 }) => {
     image: <path d="M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5" />,
     wand: <path d="M4 20L16 8M14 6l2-2M18 10l2-2M9 4l1 2M4 9l2 1" />,
     contrast: <path d="M12 3a9 9 0 1 0 0 18z" />,
+    sliders: <path d="M5 4v6M5 14v6M12 4v10M12 18v2M19 4v2M19 10v10M3 12h4M10 16h4M17 8h4" />,
   }
   return (
     <svg
@@ -122,11 +126,12 @@ interface SliderProps {
   step: number
   track?: string
   formatValue?: (value: number) => string
+  disabled?: boolean
   onChange: (value: number) => void
 }
 
 /** Slider + a draggable numeric readout (the pro shortcut). */
-const Slider: FC<SliderProps> = ({ label, value, min, max, step, track, formatValue, onChange }) => {
+const Slider: FC<SliderProps> = ({ label, value, min, max, step, track, formatValue, disabled, onChange }) => {
   const dragRef = useRef<{ startX: number; startValue: number } | null>(null)
 
   const onPointerDown = (event: React.PointerEvent<HTMLSpanElement>): void => {
@@ -150,11 +155,11 @@ const Slider: FC<SliderProps> = ({ label, value, min, max, step, track, formatVa
         <span>{label}</span>
         <span
           className="ft-slider-val"
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-          title="拖拽微调 · Shift 加速"
+          onPointerDown={disabled ? undefined : onPointerDown}
+          onPointerMove={disabled ? undefined : onPointerMove}
+          onPointerUp={disabled ? undefined : onPointerUp}
+          onPointerCancel={disabled ? undefined : onPointerUp}
+          title={disabled ? undefined : '拖拽微调 · Shift 加速'}
         >
           {formatValue ? formatValue(value) : value.toFixed(3)}
         </span>
@@ -169,6 +174,7 @@ const Slider: FC<SliderProps> = ({ label, value, min, max, step, track, formatVa
         onChange={(event) => onChange(Number(event.target.value))}
         style={{ ['--ft-track' as string]: track } as CSSProperties}
         aria-label={label}
+        disabled={disabled}
       />
     </div>
   )
@@ -219,6 +225,7 @@ interface ChannelProps {
   hue: number
   chroma: number
   light: number
+  lightLabel: string
   locked: boolean
   maxChroma: number
   onHue: (value: number) => void
@@ -236,6 +243,7 @@ const Channel: FC<ChannelProps> = ({
   light,
   locked,
   maxChroma,
+  lightLabel,
   onHue,
   onChroma,
   onLight,
@@ -254,7 +262,7 @@ const Channel: FC<ChannelProps> = ({
         <button
           className="ft-lock"
           aria-pressed={locked}
-          aria-label={locked ? t('a11y.locked') : t('canvas.inspect')}
+          aria-label={locked ? t('a11y.locked') : t('a11y.lock')}
           onClick={onLock}
         >
           <Ico name={locked ? 'lock' : 'unlock'} size={12} />
@@ -274,16 +282,18 @@ const Channel: FC<ChannelProps> = ({
       </div>
 
       <Slider
+        disabled={locked}
         label={t('axis.hue')}
         value={hue}
         min={0}
         max={360}
         step={1}
-        track={`linear-gradient(90deg, ${hueStops}, ${HUE_STOPS[0] ? oklchToHex(0.72, Math.min(chroma, 0.14), 360) : ''})`}
+        track={`linear-gradient(90deg, ${hueStops}, ${oklchToHex(0.72, Math.min(chroma, 0.14), 360)})`}
         formatValue={(value) => `${Math.round(value)}°`}
         onChange={(value) => !locked && onHue(value)}
       />
       <Slider
+        disabled={locked}
         label={t('axis.chroma')}
         value={chroma}
         min={0}
@@ -294,7 +304,8 @@ const Channel: FC<ChannelProps> = ({
         onChange={(value) => !locked && onChroma(value)}
       />
       <Slider
-        label={t('axis.light')}
+        disabled={locked}
+        label={lightLabel}
         value={light}
         min={0.04}
         max={0.99}
@@ -338,6 +349,7 @@ const AuditRow: FC<{ t: Translate; result: PairResult }> = ({ t, result }) => (
 /* ── theme card ──────────────────────────────────────────────────────────── */
 
 interface ThemeCardProps {
+  t: Translate
   name: string
   subtitle?: string
   light: Palette
@@ -345,40 +357,38 @@ interface ThemeCardProps {
   selected: boolean
   onSelect: () => void
   onDelete?: () => void
+  armed?: boolean
   deleteLabel?: string
 }
 
-const ThemeCard: FC<ThemeCardProps> = ({ name, subtitle, light, dark, selected, onSelect, onDelete, deleteLabel }) => {
+const ThemeCard: FC<ThemeCardProps> = ({ t, name, subtitle, light, dark, selected, armed, onSelect, onDelete, deleteLabel }) => {
   const l = light['--dsw-alias-bg-base'] ?? '#fff'
   const d = dark['--dsw-alias-bg-base'] ?? '#111'
   const accent = light['--dsw-alias-brand-primary'] ?? '#888'
   return (
-    <div className="ft-card" role="button" tabIndex={0} aria-selected={selected} onClick={onSelect}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          onSelect()
-        }
-      }}
-    >
-      <span className="ft-card-sw">
-        <i style={{ background: l }} />
-        <i style={{ background: d }} />
-        <i style={{ background: accent }} />
-        <i style={{ background: light['--dsw-specific-sidebar-fill'] ?? l }} />
-      </span>
-      <span className="ft-card-main">
-        <span className="ft-card-name">{name}</span>
-        {subtitle && <span className="ft-card-sub">{subtitle}</span>}
-      </span>
+    // The card is a container, not a button: the delete control must stay a
+    // separate focus stop, and a button cannot legally nest a button.
+    <div className="ft-card" data-selected={selected}>
+      <button type="button" className="ft-card-main" aria-pressed={selected} onClick={onSelect}>
+        <span className="ft-card-sw">
+          <i style={{ background: l }} />
+          <i style={{ background: d }} />
+          <i style={{ background: accent }} />
+          <i style={{ background: light['--dsw-specific-sidebar-fill'] ?? l }} />
+        </span>
+        <span className="ft-card-main-text">
+          <span className="ft-card-name">{name}</span>
+          {subtitle && <span className="ft-card-sub">{subtitle}</span>}
+        </span>
+      </button>
       {onDelete && (
         <button
+          type="button"
           className="ft-card-del"
-          aria-label={deleteLabel ?? 'delete'}
-          onClick={(event) => {
-            event.stopPropagation()
-            onDelete()
-          }}
+          data-armed={Boolean(armed)}
+          aria-label={armed ? t('rail.deleteArm') : (deleteLabel ?? 'delete')}
+          title={armed ? t('rail.deleteArm') : (deleteLabel ?? 'delete')}
+          onClick={onDelete}
         >
           <Ico name="trash" size={12} />
         </button>
@@ -389,14 +399,31 @@ const ThemeCard: FC<ThemeCardProps> = ({ name, subtitle, light, dark, selected, 
 
 /* ── studio ──────────────────────────────────────────────────────────────── */
 
-export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose }) => {
-  const [history, setHistory] = useState<ThemeSpec[]>([initial])
-  const [cursor, setCursor] = useState(0)
-  const spec = history[cursor]
+export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear, onClose }) => {
+  // History and cursor live in ONE state object: committing a change that is
+  // not a real edit (clicking the stop already selected) must not move the
+  // cursor past the end of the stack.
+  const [doc, setDoc] = useState<{ stack: ThemeSpec[]; index: number }>({ stack: [initial], index: 0 })
+  const spec = doc.stack[doc.index] ?? doc.stack[doc.stack.length - 1] ?? initial
 
   const [name, setName] = useState(t('studio.name'))
   const [view, setView] = useState<PreviewView>('chat')
   const [zoom, setZoom] = useState(1)
+  const canvasRef = useRef<HTMLDivElement | null>(null)
+  const fitted = useRef(false)
+  useEffect(() => {
+    const node = canvasRef.current
+    if (!node || fitted.current || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? 0
+      if (!width || fitted.current) return
+      fitted.current = true
+      // 720 is the wide preview's natural width; keep 44px of breathing room.
+      setZoom(Math.min(1, Math.max(0.5, +((width - 44) / 720).toFixed(2))))
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
   const [compare, setCompare] = useState(false)
   const [split, setSplit] = useState(50)
   const [inspect, setInspect] = useState(false)
@@ -410,18 +437,46 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
   const [shareOpen, setShareOpen] = useState(false)
   const [cmdOpen, setCmdOpen] = useState(false)
   const [cmdQuery, setCmdQuery] = useState('')
+  const [cmdIndex, setCmdIndex] = useState(0)
   const [genOpen, setGenOpen] = useState(false)
   const [genPrompt, setGenPrompt] = useState('')
   const [genBusy, setGenBusy] = useState(false)
+  const [genOver, setGenOver] = useState(false)
   const [genCandidates, setGenCandidates] = useState<ThemeSpec[]>([])
   const [genChars, setGenChars] = useState<Swatch[]>([])
   const [genPreview, setGenPreview] = useState<string | null>(null)
   const [closing, setClosing] = useState(false)
   const [appliedSpec, setAppliedSpec] = useState<ThemeSpec | null>(null)
+  const [locks, setLocks] = useState<Record<ChannelKey, boolean>>({ th: false, th2: false, ths: false })
+  const [inspOpen, setInspOpen] = useState(true)
+  const [armedDelete, setArmedDelete] = useState<string | null>(null)
 
   const rootRef = useRef<HTMLDivElement | null>(null)
   const previousFocus = useRef<Element | null>(null)
   const owner = useMemo(() => new OverrideOwner(theme, SOURCE_STUDIO), [theme])
+
+  const toastTimer = useRef<number | null>(null)
+  const deleteTimer = useRef<number | null>(null)
+  const closingRef = useRef(false)
+  const namingRef = useRef(false)
+  const genBusyRef = useRef(false)
+  const genSeq = useRef(0)
+  const aliveRef = useRef(true)
+  const genPreviewRef = useRef<string | null>(null)
+
+  const setPreviewUrl = useCallback((next: string | null) => {
+    if (genPreviewRef.current) URL.revokeObjectURL(genPreviewRef.current)
+    genPreviewRef.current = next
+    setGenPreview(next)
+  }, [])
+
+  /* Release everything this panel owns when it goes away. */
+  useEffect(() => () => {
+    aliveRef.current = false
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current)
+    if (deleteTimer.current !== null) window.clearTimeout(deleteTimer.current)
+    if (genPreviewRef.current) URL.revokeObjectURL(genPreviewRef.current)
+  }, [])
 
   const palette = useMemo(() => fullPalette(spec), [spec])
   const results = useMemo(() => auditPalette(palette), [palette])
@@ -433,7 +488,11 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
 
   const flash = useCallback((text: string, tone: 'ok' | 'error' = 'ok') => {
     setToast({ text, tone })
-    window.setTimeout(() => setToast(null), 2000)
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current)
+    toastTimer.current = window.setTimeout(() => {
+      toastTimer.current = null
+      setToast(null)
+    }, 2000)
   }, [])
 
   /* live preview: everything, including this studio's chrome, follows the spec */
@@ -443,26 +502,28 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
   }, [owner, spec])
 
   /* history helpers */
-  const commit = useCallback(
-    (next: ThemeSpec) => {
-      setHistory((current) => {
-        const head = current.slice(0, cursor + 1)
-        const last = head[head.length - 1]
-        if (last && JSON.stringify(last) === JSON.stringify(next)) return head
-        return [...head, next].slice(-50)
-      })
-      setCursor((value) => Math.min(value + 1, 49))
-    },
-    [cursor],
-  )
+  const commit = useCallback((next: ThemeSpec) => {
+    setDoc(({ stack, index }) => {
+      const head = stack.slice(0, index + 1)
+      const last = head[head.length - 1]
+      if (last && JSON.stringify(last) === JSON.stringify(next)) {
+        return { stack: head, index: head.length - 1 }
+      }
+      const grown = [...head, next].slice(-50)
+      return { stack: grown, index: grown.length - 1 }
+    })
+  }, [])
 
   const patch = useCallback(
     (changes: Partial<ThemeSpec>) => commit({ ...spec, ...changes }),
     [commit, spec],
   )
 
-  const undo = useCallback(() => setCursor((value) => Math.max(0, value - 1)), [])
-  const redo = useCallback(() => setCursor((value) => Math.min(history.length - 1, value + 1)), [history.length])
+  const undo = useCallback(() => setDoc(({ stack, index }) => ({ stack, index: Math.max(0, index - 1) })), [])
+  const redo = useCallback(
+    () => setDoc(({ stack, index }) => ({ stack, index: Math.min(stack.length - 1, index + 1) })),
+    [],
+  )
 
   /* restore library */
   useEffect(() => {
@@ -502,25 +563,26 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
   }, [])
 
   const close = useCallback(() => {
+    if (closingRef.current) return
+    closingRef.current = true
     setClosing(true)
-    // Restore whatever was applied before the studio opened; without this the
-    // preview would outlive the panel.
+    // Hand the page back to whatever is still applied. The parent owns that
+    // override, so we only ask — the studio never registers a second source.
     const stored = readJson<Record<string, unknown>>(STORAGE_SPEC)
-    const appliedOwner = new OverrideOwner(theme, SOURCE_APPLIED)
-    appliedOwner.set(stored ? generateTokens(normalizeSpec(stored)) : null)
+    if (stored) onApplied?.(normalizeSpec(stored), name)
+    else onClear?.()
     window.setTimeout(() => {
       owner.dispose()
       onClose()
-    }, 170)
-  }, [onClose, owner, theme])
+    }, 180)
+  }, [name, onApplied, onClear, onClose, owner])
 
   const apply = useCallback(() => {
     const tokens = generateTokens(spec)
-    const appliedOwner = new OverrideOwner(theme, SOURCE_APPLIED)
-    const ok = appliedOwner.set(tokens)
+    const ok = Boolean(theme?.overrideTokens)
     writeJson(STORAGE_SPEC, spec)
-    // The studio owner would otherwise be disposed with the panel; keep the
-    // preview source as the live owner when the theme service rotates it.
+    // The parent registers the applied override; this owner only paints the
+    // studio while it is open.
     owner.set(tokens)
     setAppliedSpec(spec)
     flash(ok ? t('msg.applied') : t('err.noTheme'), ok ? 'ok' : 'error')
@@ -530,8 +592,10 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
   const reset = useCallback(() => {
     removeKey(STORAGE_SPEC)
     commit(defaultSpec(spec.mode))
+    setAppliedSpec(null)
+    onClear?.()
     flash(t('msg.reset'))
-  }, [commit, flash, spec.mode, t])
+  }, [commit, flash, onClear, spec.mode, t])
 
   const fixContrast = useCallback(() => {
     const fixed = autoFixContrast(spec)
@@ -556,6 +620,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
     setLibrary(next)
     writeJson(STORAGE_LIBRARY, next)
     void saveLibrary(next).then((ok) => {
+      if (!aliveRef.current) return
       setHostDown(!ok)
       flash(ok ? t('msg.saved') : t('err.noHost'), ok ? 'ok' : 'error')
     })
@@ -577,34 +642,51 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
     flash(t('row.shuffle'))
   }, [commit, flash, t])
 
+  const [naming, setNaming] = useState(false)
   const askAiName = useCallback(async () => {
-    const result = await fetchName(spec as unknown as Record<string, unknown>, navigator.language)
-    if (result) {
-      setName(result.name)
-      flash(result.name)
-    } else {
-      const hueName = t(`hue.${selectedStop}`)
-      setName(`${hueName} · ${Math.round(spec.th)}°`)
-      flash(t('err.noLlm'))
+    if (namingRef.current) return
+    namingRef.current = true
+    setNaming(true)
+    try {
+      const result = await fetchName(spec as unknown as Record<string, unknown>, navigator.language)
+      if (!aliveRef.current) return
+      if (result) {
+        setName(result.name)
+        flash(result.name)
+      } else {
+        const hueName = t(`hue.${selectedStop}`)
+        setName(`${hueName} · ${Math.round(spec.th)}°`)
+        flash(t('err.noLlm'))
+      }
+    } finally {
+      namingRef.current = false
+      if (aliveRef.current) setNaming(false)
     }
   }, [flash, selectedStop, spec, t])
 
   const runImage = useCallback(
     async (file: File) => {
+      if (genBusyRef.current) return
+      genBusyRef.current = true
+      const seq = ++genSeq.current
       setGenBusy(true)
       try {
         const { spec: next, swatches, preview } = await themeFromImage(file, spec.mode)
+        if (!aliveRef.current || seq !== genSeq.current) return
         setGenCandidates([next, ...localCandidates('image', otherMode).slice(0, 3)])
         setGenChars(swatches)
-        setGenPreview(preview)
+        setPreviewUrl(preview)
         flash(format(t('generate.done'), { n: 4 }))
       } catch {
-        flash(t('generate.failed'), 'error')
+        if (aliveRef.current) flash(t('generate.failed'), 'error')
       } finally {
-        setGenBusy(false)
+        if (seq === genSeq.current) {
+          genBusyRef.current = false
+          if (aliveRef.current) setGenBusy(false)
+        }
       }
     },
-    [flash, otherMode, spec.mode, t],
+    [flash, otherMode, setPreviewUrl, spec.mode, t],
   )
 
   const runPrompt = useCallback(async () => {
@@ -612,17 +694,24 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
       flash(t('generate.empty'), 'error')
       return
     }
+    if (genBusyRef.current) return
+    genBusyRef.current = true
+    const seq = ++genSeq.current
     setGenBusy(true)
     try {
       const { specs, source } = await aiCandidates(genPrompt, 4)
+      if (!aliveRef.current || seq !== genSeq.current) return
       setGenCandidates(specs)
       if (specs.length === 0) flash(t('generate.failed'), 'error')
       else if (source === 'local') flash(t('err.noLlm'))
       else flash(format(t('generate.done'), { n: specs.length }))
     } catch {
-      flash(t('generate.failed'), 'error')
+      if (aliveRef.current) flash(t('generate.failed'), 'error')
     } finally {
-      setGenBusy(false)
+      if (seq === genSeq.current) {
+        genBusyRef.current = false
+        if (aliveRef.current) setGenBusy(false)
+      }
     }
   }, [flash, genPrompt, t])
 
@@ -630,6 +719,10 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       const meta = event.metaKey || event.ctrlKey
+      const target = event.target as HTMLElement | null
+      const editing = Boolean(
+        target && (target.closest('input, textarea, select, [contenteditable="true"]')),
+      )
       if (event.key === 'Escape') {
         if (cmdOpen) {
           setCmdOpen(false)
@@ -646,6 +739,8 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
       }
       if (!meta) return
       const key = event.key.toLowerCase()
+      // Native undo inside a field is not ours to intercept.
+      if (editing && (key === 'z' || key === 'a')) return
       if (key === 'z') {
         event.preventDefault()
         if (event.shiftKey) redo()
@@ -675,9 +770,11 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
   useEffect(() => {
     const onTab = (event: KeyboardEvent): void => {
       if (event.key !== 'Tab' || !rootRef.current) return
-      const nodes = rootRef.current.querySelectorAll<HTMLElement>(
-        'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])',
-      )
+      const nodes = Array.from(
+        rootRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((node) => node.offsetParent !== null && !node.hasAttribute('disabled'))
       if (nodes.length === 0) return
       const first = nodes[0]
       const last = nodes[nodes.length - 1]
@@ -757,14 +854,18 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
     hue,
     chroma,
     light,
-    locked: false,
+    locked: locks[channel],
     maxChroma,
-    onHue: (value: number) => patch(channel === 'th' ? { th: value } : channel === 'th2' ? { th2: value } : { ths: value }),
+    // The surface channel has no separate lightness of its own: its slider edits
+    // the page background, and the label says so.
+    lightLabel: channel === 'ths' ? t('color.background') : t('axis.light'),
+    onHue: (value: number) => !locks[channel] && patch(channel === 'th' ? { th: value } : channel === 'th2' ? { th2: value } : { ths: value }),
     onChroma: (value: number) =>
-      patch(channel === 'th' ? { c1: value } : channel === 'th2' ? { c2: value } : { sc: value }),
+      !locks[channel] && patch(channel === 'th' ? { c1: value } : channel === 'th2' ? { c2: value } : { sc: value }),
     onLight: (value: number) =>
-      patch(channel === 'th' ? { l1: value } : channel === 'th2' ? { l2: value } : {}),
-    onLock: () => undefined,
+      !locks[channel] &&
+      patch(channel === 'th' ? { l1: value } : channel === 'th2' ? { l2: value } : { bg: value }),
+    onLock: () => setLocks((current) => ({ ...current, [channel]: !current[channel] })),
   })
 
   const tiers: Tier[] = [0, 1, 2]
@@ -806,10 +907,10 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
             <Ico name="moon" />
           </button>
           <span style={{ width: 6 }} />
-          <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.undo')} onClick={undo} disabled={cursor === 0}>
+          <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.undo')} onClick={undo} disabled={doc.index === 0}>
             <Ico name="undo" />
           </button>
-          <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.redo')} onClick={redo} disabled={cursor >= history.length - 1}>
+          <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.redo')} onClick={redo} disabled={doc.index >= doc.stack.length - 1}>
             <Ico name="redo" />
           </button>
         </div>
@@ -829,7 +930,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
       </header>
 
       {/* body */}
-      <div className={`ft-body ${railTab === 'library' ? '' : ''}`}>
+      <div className={`ft-body${inspOpen ? '' : ' no-inspector'}${railTab === 'library' ? ' rail-collapsed' : ''}`}>
         {/* rail */}
         <nav className="ft-rail" aria-label={t('rail.templates')}>
           <button className="ft-rail-btn" aria-pressed={railTab === 'templates'} onClick={() => setRailTab('templates')}>
@@ -840,6 +941,15 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
           </button>
           <button className="ft-rail-btn" aria-pressed={inspect} onClick={() => setInspect(!inspect)}>
             <Ico name="scan" /><span>{t('canvas.inspect')}</span>
+          </button>
+          <button
+            className="ft-rail-btn"
+            aria-pressed={inspOpen}
+            aria-expanded={inspOpen}
+            aria-controls="ft-inspector"
+            onClick={() => setInspOpen((value) => !value)}
+          >
+            <Ico name="sliders" /><span>{t('inspector.color')}</span>
           </button>
           <button className="ft-rail-btn" aria-pressed={compare} onClick={() => setCompare(!compare)}>
             <Ico name="contrast" /><span>{t('canvas.compare')}</span>
@@ -878,6 +988,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
                 const lightSpec = presetSpec(preset, 'light')
                 return (
                   <ThemeCard
+                    t={t}
                     key={preset.id}
                     name={t(`preset.${preset.id}`)}
                     subtitle={`${Math.round(lightSpec.th)}° · ${t('channel.ths')}`}
@@ -902,13 +1013,27 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
                 return (
                   <ThemeCard
                     key={entry.id}
+                    t={t}
                     name={entry.name}
                     subtitle={new Date(entry.updatedAt).toLocaleDateString()}
                     light={fullPalette(switchModeSafe(entrySpec, 'light'))}
                     dark={fullPalette(switchModeSafe(entrySpec, 'dark'))}
                     selected={false}
                     onSelect={() => commit(entrySpec)}
-                    onDelete={() => deleteTheme(entry.id)}
+                    armed={armedDelete === entry.id}
+                    onDelete={() => {
+                      if (armedDelete !== entry.id) {
+                        setArmedDelete(entry.id)
+                        if (deleteTimer.current !== null) window.clearTimeout(deleteTimer.current)
+                        deleteTimer.current = window.setTimeout(() => {
+                          deleteTimer.current = null
+                          setArmedDelete((value) => (value === entry.id ? null : value))
+                        }, 3000)
+                        return
+                      }
+                      setArmedDelete(null)
+                      deleteTheme(entry.id)
+                    }}
                     deleteLabel={t('rail.delete')}
                   />
                 )
@@ -950,23 +1075,25 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
             <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('canvas.zoom')} onClick={() => setZoom((value) => clamp(+(value + 0.1).toFixed(2), 0.5, 1.5))}>+</button>
           </div>
 
-          <div className="ft-canvas-stage">
+          <div className="ft-canvas-stage" ref={canvasRef}>
             <div className="ft-zoom">
               {compare ? (
                 <div className="ft-cmp" ref={splitRef} style={{ ['--ft-split' as string]: `${split}%` } as CSSProperties}>
                   <div className="ft-zoom-inner" style={{ transform: `scale(${zoom})` }}>
                     <div className="ft-cmp-track" style={{ width: 720, height: 520 }}>
                       <div className="ft-cmp-base" aria-hidden="true">
-                        <PreviewFrame t={t} spec={baseline} palette={baselinePalette} view={view} large blind={blind} />
+                        <PreviewFrame t={t} spec={baseline} palette={baselinePalette} view={view} large blind={blind} filters={false} />
                       </div>
                       <div className="ft-cmp-b">
-                        <PreviewFrame t={t} spec={spec} palette={palette} view={view} large blind={blind} inspect={inspect} onInspect={setHit} />
+                        <PreviewFrame t={t} spec={spec} palette={palette} view={view} large blind={blind} filters={false} inspect={inspect} onInspect={setHit} />
                       </div>
-                      <span className="ft-cmp-tag" style={{ left: 10 }}>{t('msg.reset')}</span>
+                      <span className="ft-cmp-tag" style={{ left: 10 }}>{t('canvas.before')}</span>
                       <span className="ft-cmp-tag" style={{ right: 10 }}>{name}</span>
                       <div
                         className="ft-cmp-line"
                         role="separator"
+                        aria-label={t('canvas.compare')}
+                        aria-orientation="vertical"
                         aria-valuenow={Math.round(split)}
                         aria-valuemin={3}
                         aria-valuemax={97}
@@ -993,6 +1120,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
                     view={view}
                     large
                     blind={blind}
+                    filters={false}
                     inspect={inspect}
                     onInspect={setHit}
                   />
@@ -1003,7 +1131,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
         </main>
 
         {/* inspector */}
-        <aside className="ft-insp" aria-label={t('inspector.color')}>
+        <aside className="ft-insp" id="ft-inspector" aria-label={t('inspector.color')} hidden={!inspOpen}>
           <div className="ft-insp-body">
             <Section title={t('inspector.color')}>
               <Channel {...channelProps('th', spec.th, spec.c1, spec.l1, 0.37)} />
@@ -1157,13 +1285,40 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
               autoFocus
               placeholder={t('rail.search')}
               value={cmdQuery}
-              onChange={(event) => setCmdQuery(event.target.value)}
+              role="combobox"
+              aria-expanded="true"
+              aria-controls="ft-cmd-list"
+              aria-activedescendant={commands[cmdIndex] ? `ft-cmd-${commands[cmdIndex].id}` : undefined}
+              onChange={(event) => {
+                setCmdQuery(event.target.value)
+                setCmdIndex(0)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'ArrowDown') {
+                  event.preventDefault()
+                  setCmdIndex((index) => (commands.length === 0 ? 0 : (index + 1) % commands.length))
+                } else if (event.key === 'ArrowUp') {
+                  event.preventDefault()
+                  setCmdIndex((index) => (commands.length === 0 ? 0 : (index - 1 + commands.length) % commands.length))
+                } else if (event.key === 'Enter') {
+                  const command = commands[cmdIndex]
+                  if (!command) return
+                  event.preventDefault()
+                  setCmdOpen(false)
+                  command.run()
+                }
+              }}
             />
-            <div className="ft-cmd-list">
-              {commands.map((command) => (
+            <div className="ft-cmd-list" id="ft-cmd-list" role="listbox">
+              {commands.map((command, index) => (
                 <button
                   key={command.id}
+                  id={`ft-cmd-${command.id}`}
+                  role="option"
+                  aria-selected={index === cmdIndex}
+                  data-active={index === cmdIndex}
                   className="ft-cmd-item"
+                  onMouseEnter={() => setCmdIndex(index)}
                   onClick={() => {
                     setCmdOpen(false)
                     command.run()
@@ -1194,7 +1349,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
               <input className="ft-input" readOnly value={encodeShare(spec, name)} onFocus={(event) => event.currentTarget.select()} />
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 <button className="ft-btn" onClick={() => void copy(encodeShare(spec, name), flash, t)}>{t('share.link')}</button>
-                <button className="ft-btn" onClick={() => void copy(exportCss(spec, { ...spec, mode: otherMode }), flash, t)}>{t('share.css')}</button>
+                <button className="ft-btn" onClick={() => void copy(exportCss(spec, switchMode(spec, otherMode)), flash, t)}>{t('share.css')}</button>
                 <button className="ft-btn" onClick={() => void copy(JSON.stringify(spec, null, 2), flash, t)}>{t('share.json')}</button>
               </div>
               <div style={{ height: 1, background: 'var(--dsw-alias-border-l1)' }} />
@@ -1213,16 +1368,6 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
                     flash(t('share.imported'))
                   } else {
                     flash(t('share.invalid'), 'error')
-                  }
-                }}
-                onBlur={(event) => {
-                  const value = event.target.value.trim()
-                  if (!value) return
-                  const decoded = decodeShare(value)
-                  if (decoded) {
-                    commit(decoded.spec)
-                    if (decoded.name) setName(decoded.name)
-                    flash(t('share.imported'))
                   }
                 }}
               />
@@ -1245,8 +1390,23 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
                 <Ico name="close" size={14} />
               </button>
             </div>
-            <div className="ft-dialog-body">
-              <label className="ft-drop" data-over={false}>
+            <div className="ft-dialog-body" aria-busy={genBusy}>
+              <label
+                className="ft-drop"
+                data-over={genOver}
+                onDragOver={(event) => {
+                  event.preventDefault()
+                  setGenOver(true)
+                }}
+                onDragLeave={() => setGenOver(false)}
+                onDrop={(event) => {
+                  event.preventDefault()
+                  setGenOver(false)
+                  const file = event.dataTransfer.files?.[0]
+                  if (file && file.type.startsWith('image/')) void runImage(file)
+                  else flash(t('generate.noImage'), 'error')
+                }}
+              >
                 <input
                   type="file"
                   accept="image/*"
@@ -1294,6 +1454,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
                     const dark = fullPalette({ ...candidate, mode: 'dark' })
                     return (
                       <ThemeCard
+                        t={t}
                         key={index}
                         name={`${Math.round(candidate.th)}°`}
                         subtitle={index === 0 && genChars.length > 0 ? t('generate.image') : `${candidate.c1.toFixed(3)}`}

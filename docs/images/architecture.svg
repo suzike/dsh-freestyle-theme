@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="660" viewBox="0 0 1240 660" role="img" aria-label="Architecture: one package, two halves, four boundaries">
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111720"/>
+      <stop offset="1" stop-color="#0c1116"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5f6d7c"/>
+    </marker>
+    <marker id="arrowAccent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#3ddc97"/>
+    </marker>
+  </defs>
+
+  <rect width="1240" height="660" fill="#0b0f14"/>
+
+  <g font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif">
+    <text x="44" y="48" font-size="20" font-weight="650" fill="#e8eaed">一个包，两个面，四条边界</text>
+    <text x="44" y="70" font-size="11.5" fill="#8b93a1">浏览器只跑配色与界面；文件、模型、路由全在宿主。客户端产物不 import 任何别的插件字节。</text>
+  </g>
+
+  <!-- panel A: browser -->
+  <g>
+    <rect x="44" y="96" width="424" height="500" rx="18" fill="url(#panel)" stroke="rgba(255,255,255,0.09)"/>
+    <text x="68" y="128" font-size="12" font-weight="600" fill="#e8eaed">浏览器 · lib/client.js</text>
+    <text x="68" y="146" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#6d7886">closure factory · requires only react</text>
+
+    <g font-size="11.5" fill="#c8d2dc">
+      <rect x="68" y="166" width="376" height="52" rx="11" fill="#151d26" stroke="rgba(255,255,255,0.07)"/>
+      <text x="84" y="188" font-weight="600">设置行 · settings.general.item</text>
+      <text x="84" y="205" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#7a8794">缩略图 + 名称 + 随机 / 打开工作室</text>
+
+      <rect x="68" y="230" width="376" height="76" rx="11" fill="#151d26" stroke="rgba(61,220,151,0.28)"/>
+      <text x="84" y="252" font-weight="600" fill="#eaf7f1">全屏工作室 · studio.tsx</text>
+      <text x="84" y="269" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#7a8794">顶栏 / 图标栏 / 预设库 / 画布 / 检查器</text>
+      <text x="84" y="287" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#6d7886">⌘Z ⌘K ⌘S ⌘± 0 · 50 步历史 · 焦点陷阱</text>
+
+      <rect x="68" y="318" width="182" height="64" rx="11" fill="#151d26" stroke="rgba(255,255,255,0.07)"/>
+      <text x="82" y="340" font-weight="600">画布 preview.tsx</text>
+      <text x="82" y="357" font-size="9.5" fill="#7a8794" font-family="ui-monospace,Menlo,monospace">聊天/列表/表单</text>
+      <text x="82" y="372" font-size="9.5" fill="#7a8794" font-family="ui-monospace,Menlo,monospace">对比 · 色觉 · Inspect</text>
+
+      <rect x="262" y="318" width="182" height="64" rx="11" fill="#151d26" stroke="rgba(255,255,255,0.07)"/>
+      <text x="276" y="340" font-weight="600">引擎</text>
+      <text x="276" y="357" font-size="9.5" fill="#7a8794" font-family="ui-monospace,Menlo,monospace">palette · contrast</text>
+      <text x="276" y="372" font-size="9.5" fill="#7a8794" font-family="ui-monospace,Menlo,monospace">generate · 119 tokens</text>
+
+      <rect x="68" y="394" width="376" height="46" rx="11" fill="#151d26" stroke="rgba(255,255,255,0.07)"/>
+      <text x="84" y="414" font-weight="600">设计系统 · styles.ts</text>
+      <text x="84" y="430" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#7a8794">间距 4px 栅格 · 动效 120/180/240/320 · 焦点环</text>
+
+      <rect x="68" y="452" width="376" height="52" rx="11" fill="#101820" stroke="rgba(255,255,255,0.07)" stroke-dasharray="4 4"/>
+      <text x="84" y="474" font-weight="600">localStorage</text>
+      <text x="84" y="491" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#7a8794">已应用坐标 · 主题库副本 · 宽屏开关</text>
+
+      <rect x="68" y="516" width="376" height="60" rx="11" fill="#0f1a17" stroke="rgba(61,220,151,0.22)"/>
+      <text x="84" y="538" font-weight="600" fill="#bdf0da">图片取色在本地完成</text>
+      <text x="84" y="555" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#7a8794">96×96 画布 → OKLab k-means → 坐标</text>
+      <text x="84" y="568" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#6d7886">图片字节不出浏览器</text>
+    </g>
+  </g>
+
+  <!-- boundary lane -->
+  <g>
+    <line x1="620" y1="96" x2="620" y2="596" stroke="rgba(255,255,255,0.09)" stroke-dasharray="3 7"/>
+    <text x="620" y="88" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#5f6d7c">BOUNDARY</text>
+
+    <g font-family="ui-monospace,Menlo,monospace" font-size="8.8" fill="#7a8794">
+      <line x1="492" y1="196" x2="748" y2="196" stroke="#5f6d7c" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <text x="620" y="188" text-anchor="middle">PUT /themes</text>
+
+      <line x1="748" y1="268" x2="492" y2="268" stroke="#5f6d7c" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <text x="620" y="260" text-anchor="middle">候选坐标 · 命名</text>
+
+      <line x1="748" y1="352" x2="492" y2="352" stroke="#3ddc97" stroke-width="1.3" marker-end="url(#arrowAccent)"/>
+      <text x="620" y="344" text-anchor="middle" fill="#3ddc97">119 tokens</text>
+
+      <line x1="492" y1="438" x2="748" y2="438" stroke="#3ddc97" stroke-width="1.3" marker-end="url(#arrowAccent)"/>
+      <text x="620" y="430" text-anchor="middle" fill="#3ddc97">overrideTokens()</text>
+    </g>
+  </g>
+
+  <!-- panel B: host -->
+  <g>
+    <rect x="772" y="96" width="424" height="500" rx="18" fill="url(#panel)" stroke="rgba(255,255,255,0.09)"/>
+    <text x="796" y="128" font-size="12" font-weight="600" fill="#e8eaed">DSH 进程 · lib/index.js</text>
+    <text x="796" y="146" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#6d7886">export { name, inject: ['webServer'], apply }</text>
+
+    <g font-size="11.5" fill="#c8d2dc">
+      <rect x="796" y="166" width="376" height="52" rx="11" fill="#151d26" stroke="rgba(255,255,255,0.07)"/>
+      <text x="812" y="188" font-weight="600">webServer.register</text>
+      <text x="812" y="205" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#7a8794">三条 { kind: 'exact' } 路由 · 可释放</text>
+
+      <rect x="796" y="230" width="376" height="58" rx="11" fill="#151d26" stroke="rgba(255,255,255,0.07)"/>
+      <text x="812" y="252" font-weight="600">GET / PUT /api/dsh-freestyle-theme/themes</text>
+      <text x="812" y="270" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#7a8794">校验 → 截断 → 临时文件 → rename</text>
+
+      <rect x="796" y="300" width="182" height="62" rx="11" fill="#151d26" stroke="rgba(255,255,255,0.07)"/>
+      <text x="810" y="322" font-weight="600">POST /generate</text>
+      <text x="810" y="339" font-size="9.5" fill="#7a8794" font-family="ui-monospace,Menlo,monospace">描述 → 候选坐标</text>
+      <text x="810" y="352" font-size="9.5" fill="#6d7886" font-family="ui-monospace,Menlo,monospace">限幅 · 失败降级</text>
+
+      <rect x="990" y="300" width="182" height="62" rx="11" fill="#151d26" stroke="rgba(255,255,255,0.07)"/>
+      <text x="1004" y="322" font-weight="600">POST /name</text>
+      <text x="1004" y="339" font-size="9.5" fill="#7a8794" font-family="ui-monospace,Menlo,monospace">坐标 → 名称/标签</text>
+      <text x="1004" y="352" font-size="9.5" fill="#6d7886" font-family="ui-monospace,Menlo,monospace">解析首个 JSON 对象</text>
+
+      <rect x="796" y="378" width="376" height="62" rx="11" fill="#151d26" stroke="rgba(255,255,255,0.07)"/>
+      <text x="812" y="400" font-weight="600">ctx.get('llm') · ctx.get('agentDefaultModel')</text>
+      <text x="812" y="418" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#7a8794">流式补全 → text-delta 累计 → finish 判定</text>
+      <text x="812" y="433" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#6d7886">没有模型时返回 code，不抛异常</text>
+
+      <rect x="796" y="456" width="376" height="56" rx="11" fill="#101820" stroke="rgba(255,255,255,0.07)" stroke-dasharray="4 4"/>
+      <text x="812" y="478" font-weight="600">~/.dsh/freestyle-theme/themes.json</text>
+      <text x="812" y="496" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#7a8794">版本化 JSON · 单文件 · 上限 120 套</text>
+
+      <rect x="796" y="528" width="376" height="48" rx="11" fill="#0f1a17" stroke="rgba(61,220,151,0.22)"/>
+      <text x="812" y="548" font-weight="600" fill="#bdf0da">壳的 theme 服务</text>
+      <text x="812" y="565" font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#7a8794">只接受令牌覆盖 · 不接受样式注入</text>
+    </g>
+  </g>
+
+  <g font-family="ui-monospace,Menlo,monospace" font-size="9.5" fill="#5f6d7c">
+    <text x="44" y="628">模块表：react · react/jsx-runtime · react-dom · react-dom/client · cordis · zod · react-virtual · store · ui-slots · ui-primitives · dockkit</text>
+    <text x="44" y="644">越界即构建失败（purity gate）—— 这是「插件不互相 import」唯一可靠的执行方式</text>
+  </g>
+</svg>

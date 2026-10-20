@@ -37,6 +37,8 @@ export interface PreviewProps {
   /** Inspect mode: hot regions report themselves. */
   inspect?: boolean
   onInspect?: (target: InspectTarget | null) => void
+  /** Render the shared SVG filters; only the outermost frame should. */
+  filters?: boolean
 }
 
 /** SVG filter ids for the vision simulations. */
@@ -129,10 +131,10 @@ const Hot: FC<HotProps> = ({ tokens, label, inspect, onInspect, className, style
       className={`ft-hot ${className ?? ''}`}
       style={style}
       data-token={tokens.join(' ')}
-      onMouseEnter={(event) =>
+      onPointerEnter={(event) =>
         onInspect({ tokens, label, rect: (event.currentTarget as HTMLElement).getBoundingClientRect() })
       }
-      onMouseLeave={() => onInspect(null)}
+      onPointerLeave={() => onInspect(null)}
     >
       {children}
     </div>
@@ -144,7 +146,7 @@ interface FrameProps extends PreviewProps {
 }
 
 /** The preview window: chrome, sidebar and the selected skeleton. */
-export const PreviewFrame: FC<FrameProps> = ({ spec, palette, view, large, blind, inspect, onInspect, t }) => {
+export const PreviewFrame: FC<FrameProps> = ({ spec, palette, view, large, blind, inspect, onInspect, filters, t }) => {
   const vars = { ...palette, ...lookTokens(spec) } as CSSProperties
   const mode: ThemeMode = spec.mode
 
@@ -153,9 +155,10 @@ export const PreviewFrame: FC<FrameProps> = ({ spec, palette, view, large, blind
       className="ft-pv"
       data-size={large ? 'lg' : 'sm'}
       data-mode={mode}
+      data-inspect={inspect ? 'true' : undefined}
       style={{ ...vars, filter: blindFilter(blind ?? 'none') }}
     >
-      <VisionFilters />
+      {filters === false ? null : <VisionFilters />}
 
       {/* sidebar */}
       <div className="ft-pv-side">
@@ -210,7 +213,7 @@ export const PreviewFrame: FC<FrameProps> = ({ spec, palette, view, large, blind
           >
             <span />
           </Hot>
-          <span style={{ fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary)' }}>you</span>
+          <span style={{ fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary)' }}>{t('canvas.you')}</span>
         </div>
       </div>
 

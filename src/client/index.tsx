@@ -14,6 +14,7 @@ import { defaultSpec, fullPalette, generateTokens, normalizeSpec, type ThemeSpec
 import {
   OverrideOwner,
   readJson,
+  removeKey,
   service,
   STORAGE_SPEC,
   writeJson,
@@ -104,7 +105,8 @@ const SettingsRow: FC<RowProps> = ({ ctx, t, theme, owner }) => {
     owner.set(generateTokens(next))
     setSpec(next)
     setApplied(true)
-    return () => owner.dispose()
+    // No cleanup here: this override belongs to `apply()` and must survive the
+    // settings page being unmounted or the row remounting.
   }, [owner])
 
   /* Keep every row instance in sync after Apply. */
@@ -121,6 +123,7 @@ const SettingsRow: FC<RowProps> = ({ ctx, t, theme, owner }) => {
 
   const onApplied = useCallback(
     (next: ThemeSpec, themeName: string) => {
+      owner.set(generateTokens(next))
       setSpec(next)
       setApplied(true)
       writeJson(STORAGE_SPEC, next)
@@ -130,8 +133,15 @@ const SettingsRow: FC<RowProps> = ({ ctx, t, theme, owner }) => {
         }),
       )
     },
-    [],
+    [owner],
   )
+
+  const onClear = useCallback(() => {
+    owner.set(null)
+    removeKey(STORAGE_SPEC)
+    setSpec(defaultSpec('light'))
+    setApplied(false)
+  }, [owner])
 
   const swatches = [
     palette['--dsw-alias-bg-base'],
@@ -168,6 +178,7 @@ const SettingsRow: FC<RowProps> = ({ ctx, t, theme, owner }) => {
           theme={theme}
           initial={spec}
           onApplied={onApplied}
+          onClear={onClear}
           onClose={() => setOpen(false)}
         />
       )}
@@ -180,6 +191,11 @@ export function apply(ctx: PluginContext): void {
   const t = makeTranslator(ctx)
   const theme = service<ThemeService>(ctx, 'theme')
   const owner = new OverrideOwner(theme, 'dsh-freestyle-theme')
+
+  // Restore the last applied theme before the first paint, not when the
+  // settings page happens to mount.
+  const stored = readJson<Record<string, unknown>>(STORAGE_SPEC)
+  if (stored) owner.set(generateTokens(normalizeSpec(stored)))
 
   if (typeof ctx.effect === 'function') {
     ctx.effect(() => ensureStyles(), 'dsh-freestyle-theme: styles')

@@ -47,13 +47,22 @@ if (shellPath && existsSync(shellPath)) {
   const shell = new Set([...readFileSync(shellPath, 'utf8').matchAll(/--dsw-[a-z0-9-]+/g)].map((m) => m[0]))
   const sources = ['palette.ts', 'preview.tsx', 'studio.tsx', 'index.tsx', 'styles.ts']
   const seen = new Set()
+  const usedByUi = new Set()
   for (const file of sources) {
     const text = readFileSync(join(root, 'src/client', file), 'utf8')
-    for (const match of text.matchAll(/--dsw-[a-z0-9-]+/g)) seen.add(match[0])
+    for (const match of text.matchAll(/--dsw-[a-z0-9-]+/g)) {
+      seen.add(match[0])
+      if (file !== 'palette.ts') usedByUi.add(match[0])
+    }
   }
   const unknown = [...seen].filter((token) => !shell.has(token) && token !== '--dsw-alias-' && token !== '--dsw-specific-')
   console.log(`tokens: ${seen.size} referenced, ${shell.size} defined by the shell`)
   if (unknown.length) fail('not defined by the shell: ' + unknown.join(', '))
+  // Every token the palette can emit should actually be painted somewhere, so a
+  // renamed token cannot silently become dead weight.
+  const emitted = Object.keys(palette.generateTokens(palette.defaultSpec('light')))
+  const unpainted = emitted.filter((token) => !usedByUi.has(token))
+  if (unpainted.length) console.log(`tokens: ${unpainted.length} emitted but not painted (fine for reserved aliases): ${unpainted.slice(0, 4).join(', ')}…`)
 } else {
   console.log('tokens: skipped shell diff (set DSH_THEME_CLIENT to enable)')
 }
@@ -71,14 +80,24 @@ const broken = names.filter((name) => {
 if (broken.length) fail('tokens without a light/dark pair: ' + broken.join(', '))
 
 /* 3 ── contrast, every preset, both modes ───────────────────────────────── */
+const TEXT_KINDS = new Set(['body', 'secondary', 'caption'])
+let worst = { ratio: Infinity, id: '', preset: '', mode: '' }
 for (const preset of palette.PRESETS) {
   for (const mode of ['light', 'dark']) {
     const results = contrast.auditPalette(palette.fullPalette(palette.presetSpec(preset.id, mode)))
     const bad = results.filter((result) => !result.pass)
     if (bad.length) fail(`${preset.id}/${mode}: ` + bad.map((r) => `${r.id} ${r.ratio}:1 lc${r.lc}`).join(', '))
+    // No pair may rely on the 3:1 large-text / UI allowance: the panel states
+    // AA compliance, so every measured pair has to clear 4.5:1 here.
+    const thin = results.filter((result) => TEXT_KINDS.has(result.kind) ? result.ratio < 4.5 : result.ratio < 3)
+    if (thin.length) fail(`${preset.id}/${mode} AA floor: ` + thin.map((r) => `${r.id} ${r.ratio}:1`).join(', '))
+    for (const result of results) {
+      if (result.ratio < worst.ratio) worst = { ratio: result.ratio, id: result.id, preset: preset.id, mode }
+    }
   }
 }
 console.log(`contrast: ${palette.PRESETS.length} presets × 2 modes × ${contrast.AUDIT_PAIRS.length} pairs`)
+console.log(`contrast: thinnest pair ${worst.ratio}:1 (${worst.id}, ${worst.preset}/${worst.mode})`)
 
 /* 4 ── share code round-trips ───────────────────────────────────────────── */
 const spec = palette.defaultSpec('dark')

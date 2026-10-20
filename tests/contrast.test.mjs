@@ -19,10 +19,13 @@ test('APCA polarity flips with the ink, magnitude does not collapse', () => {
   assert.ok(Math.abs(Math.abs(lightOnDark) - darkOnLight) < 25, 'asymmetry should stay modest')
 })
 
-test('the audit covers twenty pairs and names them', () => {
+test('the audit covers every shipped pair and names them', () => {
   const results = contrast.auditPalette(palette.fullPalette(palette.defaultSpec('light')))
-  assert.equal(results.length, 20)
-  assert.equal(contrast.AUDIT_PAIRS.length, 20)
+  assert.equal(results.length, contrast.AUDIT_PAIRS.length)
+  assert.ok(contrast.AUDIT_PAIRS.length >= 21, 'the error toast pair must be audited')
+  const ids = contrast.AUDIT_PAIRS.map((pair) => pair.id)
+  assert.ok(ids.includes('state.errorToast'), 'error toast ink on toast background')
+  assert.equal(new Set(ids).size, ids.length, 'pair ids are unique')
   for (const result of results) {
     assert.ok(result.id && result.fg && result.bg && result.kind, JSON.stringify(result))
     assert.ok(Number.isFinite(result.ratio) && Number.isFinite(result.lc), result.id)
@@ -66,6 +69,8 @@ test('autoFix repairs a hostile theme by moving lightness only', () => {
 test('summary reports the worst offender', () => {
   const results = contrast.auditPalette(palette.fullPalette(palette.defaultSpec('light')))
   const summary = contrast.auditSummary(results)
-  assert.equal(summary.total, 20)
-  assert.equal(summary.passed + (summary.worst ? 20 - summary.passed : 0), 20)
+  assert.equal(summary.total, contrast.AUDIT_PAIRS.length)
+  assert.ok(summary.passed >= 0 && summary.passed <= summary.total)
+  if (summary.passed < summary.total) assert.ok(summary.worst, 'a failing audit names its worst pair')
+  else assert.equal(summary.worst, null)
 })

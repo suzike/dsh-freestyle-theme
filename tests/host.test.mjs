@@ -17,15 +17,26 @@ const host = await load('../src/index.ts')
 
 /* ── harness ─────────────────────────────────────────────────────────────── */
 
-function fakeRequest(method, body) {
+function fakeRequest(method, body, options = {}) {
   const request = new EventEmitter()
   request.method = method
+  request.headers = {
+    host: '127.0.0.1:60880',
+    'content-type': 'application/json',
+    ...(options.headers ?? {}),
+  }
+  request.destroyed = false
+  request.destroy = () => {
+    request.destroyed = true
+  }
   setImmediate(() => {
-    if (body !== undefined) {
+    if (options.chunks) {
+      for (const chunk of options.chunks) request.emit('data', chunk)
+    } else if (body !== undefined) {
       const text = typeof body === 'string' ? body : JSON.stringify(body)
-      request.emit('data', { length: Buffer.byteLength(text), toString: () => text })
+      request.emit('data', Buffer.from(text))
     }
-    request.emit('end')
+    if (!request.destroyed) request.emit('end')
   })
   return request
 }
@@ -68,10 +79,12 @@ function fakeResponse() {
   }
 }
 
-async function call(route, method, body) {
+async function call(route, method, body, options) {
   const response = fakeResponse()
-  route.handler(fakeRequest(method, body), response)
+  const request = fakeRequest(method, body, options)
+  route.handler(request, response)
   await response.done
+  response.request = request
   return response
 }
 
@@ -165,11 +178,12 @@ test('PUT persists, GET reads back, and no temp file is left behind', async () =
 })
 
 test('PUT drops malformed entries and truncates over-long ones', async () => {
+  const validSpec = { th: 168, c1: 0.1, l1: 0.5, th2: 200, c2: 0.1, l2: 0.6, ths: 176, sc: 0.03, bg: 0.95, neutralTint: 0.2, spread: 0.1, stateBoost: 1, tx: 0.14, sb: 0.97, fontPair: 'sans', fontScale: 1, radius: 1, shadow: 1, mode: 'light' }
   const put = await call(route['/api/dsh-freestyle-theme/themes'], 'PUT', {
     themes: [
       theme('good', 'Good'),
       { id: '', name: 'no id', spec: {} },
-      { id: 'x'.repeat(65), name: 'long id', spec: {} },
+      { id: 'x'.repeat(65), name: 'long id', spec: validSpec },
       { id: 'y', name: '', spec: {} },
       { id: 'z', name: 'no spec' },
       'nope',
@@ -198,11 +212,58 @@ test('PUT rejects a body that is not {themes: []}', async () => {
   assert.equal((await call(route['/api/dsh-freestyle-theme/themes'], 'PUT', 'not json')).status, 400)
 })
 
-test('PUT rejects an oversized body without buffering it all', async () => {
+test('PUT rejects an oversized body and tears the stream down', async () => {
   const huge = { themes: [], padding: 'x'.repeat(140 * 1024) }
   const response = await call(route['/api/dsh-freestyle-theme/themes'], 'PUT', huge)
-  assert.equal(response.status, 400)
-  assert.equal(response.body.ok, false)
+  assert.equal(response.status, 413)
+  assert.equal(response.body.code, 'too-large')
+  assert.equal(response.request.destroyed, true, 'the socket is destroyed, not drained')
+})
+
+test('a body split mid-character still decodes as UTF-8', async () => {
+  const text = JSON.stringify({ themes: [theme('zh', '雾林深处')] })
+  const bytes = Buffer.from(text, 'utf8')
+  const cut = bytes.indexOf(Buffer.from('雾', 'utf8')) + 1
+  const chunks = [bytes.subarray(0, cut), bytes.subarray(cut)]
+  const put = await call(route['/api/dsh-freestyle-theme/themes'], 'PUT', undefined, { chunks })
+  assert.equal(put.body.ok, true)
+  const get = await call(route['/api/dsh-freestyle-theme/themes'], 'GET')
+  assert.equal(get.body.themes[0].name, '雾林深处')
+})
+
+test('two overlapping saves cannot corrupt the library', async () => {
+  const [first, second] = await Promise.all([
+    call(route['/api/dsh-freestyle-theme/themes'], 'PUT', { themes: [theme('a1', 'A1'), theme('a2', 'A2')] }),
+    call(route['/api/dsh-freestyle-theme/themes'], 'PUT', { themes: [theme('b1', 'B1')] }),
+  ])
+  assert.equal(first.body.ok, true)
+  assert.equal(second.body.ok, true)
+
+  const stored = JSON.parse(await readFile(join(home, 'freestyle-theme', 'themes.json'), 'utf8'))
+  assert.ok(Array.isArray(stored.themes), 'the file is still valid JSON')
+  assert.ok(['B1'].includes(stored.themes[0].name) || stored.themes[0].name.startsWith('A'))
+
+  const files = await readdir(join(home, 'freestyle-theme'))
+  assert.deepEqual(files, ['themes.json'], 'no temp file survives either writer')
+})
+
+test('cross-origin and non-JSON callers are refused', async () => {
+  const cross = await call(route['/api/dsh-freestyle-theme/generate'], 'POST', { prompt: 'x' }, {
+    headers: { origin: 'https://evil.example' },
+  })
+  assert.equal(cross.status, 403)
+  assert.equal(cross.body.code, 'origin')
+
+  const plain = await call(route['/api/dsh-freestyle-theme/generate'], 'POST', { prompt: 'x' }, {
+    headers: { 'content-type': 'text/plain' },
+  })
+  assert.equal(plain.status, 415)
+  assert.equal(plain.body.code, 'content-type')
+
+  const sameOrigin = await call(route['/api/dsh-freestyle-theme/themes'], 'GET', undefined, {
+    headers: { origin: 'http://127.0.0.1:60880' },
+  })
+  assert.equal(sameOrigin.status, 200)
 })
 
 test('other methods get 405 with an explicit code', async () => {
@@ -211,12 +272,13 @@ test('other methods get 405 with an explicit code', async () => {
   assert.equal(response.body.code, 'method')
 })
 
-test('a corrupt library file degrades to an empty list', async () => {
+test('a corrupt library file reports a fault instead of pretending to be empty', async () => {
   const file = join(home, 'freestyle-theme', 'themes.json')
   const { writeFile } = await import('node:fs/promises')
   await writeFile(file, '{{{', 'utf8')
   const response = await call(route['/api/dsh-freestyle-theme/themes'], 'GET')
-  assert.deepEqual(response.body, { ok: true, themes: [] })
+  assert.equal(response.status, 500)
+  assert.deepEqual(response.body, { ok: false, code: 'io', message: 'library unreadable' })
 })
 
 /* ── model routes ────────────────────────────────────────────────────────── */

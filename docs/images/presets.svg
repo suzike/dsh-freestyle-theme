@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1124" height="576" viewBox="0 0 1124 576" role="img" aria-label="Twelve coordinate presets in light and dark">
+  <rect width="1124" height="576" rx="0" fill="#0b0f14"/>
+  <g font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif">
+    <text x="44" y="40" font-size="19" font-weight="650" fill="#e8eaed">十二套坐标预设</text>
+    <text x="44" y="60" font-size="11.5" fill="#8b93a1">每套预设不是「换个色相」，而是自带中性温度、明度梯度与状态簇的一组坐标。所有色块由 palette.ts 实时生成。</text>
+  </g>
+  
+    <g>
+      <rect x="44" y="74" width="244" height="132" rx="14" fill="#11161d" stroke="rgba(255,255,255,0.10)"/>
+      <rect x="44" y="74" width="244" height="3" rx="1.5" fill="#387761"/>
+      <text x="58" y="104" font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" fill="#e8eaed">mist</text>
+      <text x="274" y="104" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" fill="#8b93a1">168° · c0.07</text>
+      <text x="58" y="124" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">LIGHT</text>
+      <rect x="58" y="134" width="20" height="20" rx="6" fill="#eff2f0" stroke="rgba(255,255,255,0.10)"/><rect x="82" y="134" width="20" height="20" rx="6" fill="#f9fcf9" stroke="rgba(255,255,255,0.10)"/><rect x="106" y="134" width="20" height="20" rx="6" fill="#387761" stroke="rgba(255,255,255,0.10)"/><rect x="130" y="134" width="20" height="20" rx="6" fill="#070a09" stroke="rgba(255,255,255,0.10)"/><rect x="154" y="134" width="20" height="20" rx="6" fill="rgba(75,78,75,0.05)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="58" y="174" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">DARK</text>
+      <rect x="58" y="184" width="20" height="20" rx="6" fill="#080a08" stroke="rgba(255,255,255,0.10)"/><rect x="82" y="184" width="20" height="20" rx="6" fill="#111312" stroke="rgba(255,255,255,0.10)"/><rect x="106" y="184" width="20" height="20" rx="6" fill="#8bc6af" stroke="rgba(255,255,255,0.10)"/><rect x="130" y="184" width="20" height="20" rx="6" fill="#ebf2ef" stroke="rgba(255,255,255,0.10)"/><rect x="154" y="184" width="20" height="20" rx="6" fill="rgba(207,210,207,0.06)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="274" y="194" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">tint 22%</text>
+    </g>
+    <g>
+      <rect x="308" y="74" width="244" height="132" rx="14" fill="#11161d" stroke="rgba(255,255,255,0.10)"/>
+      <rect x="308" y="74" width="244" height="3" rx="1.5" fill="#536b85"/>
+      <text x="322" y="104" font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" fill="#e8eaed">ink</text>
+      <text x="538" y="104" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" fill="#8b93a1">250° · c0.05</text>
+      <text x="322" y="124" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">LIGHT</text>
+      <rect x="322" y="134" width="20" height="20" rx="6" fill="#e7edef" stroke="rgba(255,255,255,0.10)"/><rect x="346" y="134" width="20" height="20" rx="6" fill="#f5fafd" stroke="rgba(255,255,255,0.10)"/><rect x="370" y="134" width="20" height="20" rx="6" fill="#536b85" stroke="rgba(255,255,255,0.10)"/><rect x="394" y="134" width="20" height="20" rx="6" fill="#07090d" stroke="rgba(255,255,255,0.10)"/><rect x="418" y="134" width="20" height="20" rx="6" fill="rgba(71,78,82,0.05)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="322" y="174" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">DARK</text>
+      <rect x="322" y="184" width="20" height="20" rx="6" fill="#060a0c" stroke="rgba(255,255,255,0.10)"/><rect x="346" y="184" width="20" height="20" rx="6" fill="#121618" stroke="rgba(255,255,255,0.10)"/><rect x="370" y="184" width="20" height="20" rx="6" fill="#9bbbdd" stroke="rgba(255,255,255,0.10)"/><rect x="394" y="184" width="20" height="20" rx="6" fill="#ebf1f7" stroke="rgba(255,255,255,0.10)"/><rect x="418" y="184" width="20" height="20" rx="6" fill="rgba(201,211,215,0.06)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="538" y="194" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">tint 50%</text>
+    </g>
+    <g>
+      <rect x="572" y="74" width="244" height="132" rx="14" fill="#11161d" stroke="rgba(255,255,255,0.10)"/>
+      <rect x="572" y="74" width="244" height="3" rx="1.5" fill="#4d7455"/>
+      <text x="586" y="104" font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" fill="#e8eaed">tundra</text>
+      <text x="802" y="104" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" fill="#8b93a1">150° · c0.07</text>
+      <text x="586" y="124" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">LIGHT</text>
+      <rect x="586" y="134" width="20" height="20" rx="6" fill="#eff1ed" stroke="rgba(255,255,255,0.10)"/><rect x="610" y="134" width="20" height="20" rx="6" fill="#fafbf8" stroke="rgba(255,255,255,0.10)"/><rect x="634" y="134" width="20" height="20" rx="6" fill="#4d7455" stroke="rgba(255,255,255,0.10)"/><rect x="658" y="134" width="20" height="20" rx="6" fill="#070a08" stroke="rgba(255,255,255,0.10)"/><rect x="682" y="134" width="20" height="20" rx="6" fill="rgba(76,78,74,0.05)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="586" y="174" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">DARK</text>
+      <rect x="586" y="184" width="20" height="20" rx="6" fill="#080a07" stroke="rgba(255,255,255,0.10)"/><rect x="610" y="184" width="20" height="20" rx="6" fill="#131411" stroke="rgba(255,255,255,0.10)"/><rect x="634" y="184" width="20" height="20" rx="6" fill="#98c5a0" stroke="rgba(255,255,255,0.10)"/><rect x="658" y="184" width="20" height="20" rx="6" fill="#ecf2ed" stroke="rgba(255,255,255,0.10)"/><rect x="682" y="184" width="20" height="20" rx="6" fill="rgba(207,210,205,0.06)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="802" y="194" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">tint 30%</text>
+    </g>
+    <g>
+      <rect x="836" y="74" width="244" height="132" rx="14" fill="#11161d" stroke="rgba(255,255,255,0.10)"/>
+      <rect x="836" y="74" width="244" height="3" rx="1.5" fill="#ae4024"/>
+      <text x="850" y="104" font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" fill="#e8eaed">lava</text>
+      <text x="1066" y="104" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" fill="#8b93a1">35° · c0.15</text>
+      <text x="850" y="124" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">LIGHT</text>
+      <rect x="850" y="134" width="20" height="20" rx="6" fill="#f6eeee" stroke="rgba(255,255,255,0.10)"/><rect x="874" y="134" width="20" height="20" rx="6" fill="#fff9f9" stroke="rgba(255,255,255,0.10)"/><rect x="898" y="134" width="20" height="20" rx="6" fill="#ae4024" stroke="rgba(255,255,255,0.10)"/><rect x="922" y="134" width="20" height="20" rx="6" fill="#0d0807" stroke="rgba(255,255,255,0.10)"/><rect x="946" y="134" width="20" height="20" rx="6" fill="rgba(83,75,75,0.05)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="850" y="174" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">DARK</text>
+      <rect x="850" y="184" width="20" height="20" rx="6" fill="#0d0808" stroke="rgba(255,255,255,0.10)"/><rect x="874" y="184" width="20" height="20" rx="6" fill="#171213" stroke="rgba(255,255,255,0.10)"/><rect x="898" y="184" width="20" height="20" rx="6" fill="#ff937e" stroke="rgba(255,255,255,0.10)"/><rect x="922" y="184" width="20" height="20" rx="6" fill="#f7eeec" stroke="rgba(255,255,255,0.10)"/><rect x="946" y="184" width="20" height="20" rx="6" fill="rgba(217,206,207,0.06)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="1066" y="194" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">tint 55%</text>
+    </g>
+    <g>
+      <rect x="44" y="226" width="244" height="132" rx="14" fill="#11161d" stroke="rgba(255,255,255,0.10)"/>
+      <rect x="44" y="226" width="244" height="3" rx="1.5" fill="#007590"/>
+      <text x="58" y="256" font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" fill="#e8eaed">deepsea</text>
+      <text x="274" y="256" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" fill="#8b93a1">220° · c0.10</text>
+      <text x="58" y="276" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">LIGHT</text>
+      <rect x="58" y="286" width="20" height="20" rx="6" fill="#e7efef" stroke="rgba(255,255,255,0.10)"/><rect x="82" y="286" width="20" height="20" rx="6" fill="#f5fbfb" stroke="rgba(255,255,255,0.10)"/><rect x="106" y="286" width="20" height="20" rx="6" fill="#007590" stroke="rgba(255,255,255,0.10)"/><rect x="130" y="286" width="20" height="20" rx="6" fill="#060a0c" stroke="rgba(255,255,255,0.10)"/><rect x="154" y="286" width="20" height="20" rx="6" fill="rgba(72,79,79,0.05)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="58" y="326" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">DARK</text>
+      <rect x="58" y="336" width="20" height="20" rx="6" fill="#060a0a" stroke="rgba(255,255,255,0.10)"/><rect x="82" y="336" width="20" height="20" rx="6" fill="#111515" stroke="rgba(255,255,255,0.10)"/><rect x="106" y="336" width="20" height="20" rx="6" fill="#59c8e8" stroke="rgba(255,255,255,0.10)"/><rect x="130" y="336" width="20" height="20" rx="6" fill="#eaf2f4" stroke="rgba(255,255,255,0.10)"/><rect x="154" y="336" width="20" height="20" rx="6" fill="rgba(202,211,211,0.06)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="274" y="346" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">tint 40%</text>
+    </g>
+    <g>
+      <rect x="308" y="226" width="244" height="132" rx="14" fill="#11161d" stroke="rgba(255,255,255,0.10)"/>
+      <rect x="308" y="226" width="244" height="3" rx="1.5" fill="#816249"/>
+      <text x="322" y="256" font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" fill="#e8eaed">film</text>
+      <text x="538" y="256" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" fill="#8b93a1">60° · c0.06</text>
+      <text x="322" y="276" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">LIGHT</text>
+      <rect x="322" y="286" width="20" height="20" rx="6" fill="#fbf0ed" stroke="rgba(255,255,255,0.10)"/><rect x="346" y="286" width="20" height="20" rx="6" fill="#fff9f6" stroke="rgba(255,255,255,0.10)"/><rect x="370" y="286" width="20" height="20" rx="6" fill="#816249" stroke="rgba(255,255,255,0.10)"/><rect x="394" y="286" width="20" height="20" rx="6" fill="#0c0805" stroke="rgba(255,255,255,0.10)"/><rect x="418" y="286" width="20" height="20" rx="6" fill="rgba(85,74,71,0.05)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="322" y="326" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">DARK</text>
+      <rect x="322" y="336" width="20" height="20" rx="6" fill="#0e0706" stroke="rgba(255,255,255,0.10)"/><rect x="346" y="336" width="20" height="20" rx="6" fill="#17100f" stroke="rgba(255,255,255,0.10)"/><rect x="370" y="336" width="20" height="20" rx="6" fill="#d6ae93" stroke="rgba(255,255,255,0.10)"/><rect x="394" y="336" width="20" height="20" rx="6" fill="#f6eee9" stroke="rgba(255,255,255,0.10)"/><rect x="418" y="336" width="20" height="20" rx="6" fill="rgba(219,205,202,0.06)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="538" y="346" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">tint 70%</text>
+    </g>
+    <g>
+      <rect x="572" y="226" width="244" height="132" rx="14" fill="#11161d" stroke="rgba(255,255,255,0.10)"/>
+      <rect x="572" y="226" width="244" height="3" rx="1.5" fill="#934f71"/>
+      <text x="586" y="256" font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" fill="#e8eaed">sakura</text>
+      <text x="802" y="256" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" fill="#8b93a1">350° · c0.10</text>
+      <text x="586" y="276" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">LIGHT</text>
+      <rect x="586" y="286" width="20" height="20" rx="6" fill="#f4f0f4" stroke="rgba(255,255,255,0.10)"/><rect x="610" y="286" width="20" height="20" rx="6" fill="#fefafd" stroke="rgba(255,255,255,0.10)"/><rect x="634" y="286" width="20" height="20" rx="6" fill="#934f71" stroke="rgba(255,255,255,0.10)"/><rect x="658" y="286" width="20" height="20" rx="6" fill="#0c080a" stroke="rgba(255,255,255,0.10)"/><rect x="682" y="286" width="20" height="20" rx="6" fill="rgba(80,75,80,0.05)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="586" y="326" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">DARK</text>
+      <rect x="586" y="336" width="20" height="20" rx="6" fill="#0b080b" stroke="rgba(255,255,255,0.10)"/><rect x="610" y="336" width="20" height="20" rx="6" fill="#151214" stroke="rgba(255,255,255,0.10)"/><rect x="634" y="336" width="20" height="20" rx="6" fill="#e69ec0" stroke="rgba(255,255,255,0.10)"/><rect x="658" y="336" width="20" height="20" rx="6" fill="#f5eef1" stroke="rgba(255,255,255,0.10)"/><rect x="682" y="336" width="20" height="20" rx="6" fill="rgba(213,207,212,0.06)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="802" y="346" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">tint 42%</text>
+    </g>
+    <g>
+      <rect x="836" y="226" width="244" height="132" rx="14" fill="#11161d" stroke="rgba(255,255,255,0.10)"/>
+      <rect x="836" y="226" width="244" height="3" rx="1.5" fill="#715c97"/>
+      <text x="850" y="256" font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" fill="#e8eaed">twilight</text>
+      <text x="1066" y="256" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" fill="#8b93a1">300° · c0.10</text>
+      <text x="850" y="276" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">LIGHT</text>
+      <rect x="850" y="286" width="20" height="20" rx="6" fill="#edeef3" stroke="rgba(255,255,255,0.10)"/><rect x="874" y="286" width="20" height="20" rx="6" fill="#f9faff" stroke="rgba(255,255,255,0.10)"/><rect x="898" y="286" width="20" height="20" rx="6" fill="#715c97" stroke="rgba(255,255,255,0.10)"/><rect x="922" y="286" width="20" height="20" rx="6" fill="#0a080c" stroke="rgba(255,255,255,0.10)"/><rect x="946" y="286" width="20" height="20" rx="6" fill="rgba(76,77,82,0.05)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="850" y="326" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">DARK</text>
+      <rect x="850" y="336" width="20" height="20" rx="6" fill="#08090c" stroke="rgba(255,255,255,0.10)"/><rect x="874" y="336" width="20" height="20" rx="6" fill="#131417" stroke="rgba(255,255,255,0.10)"/><rect x="898" y="336" width="20" height="20" rx="6" fill="#bcabf1" stroke="rgba(255,255,255,0.10)"/><rect x="922" y="336" width="20" height="20" rx="6" fill="#f0eff6" stroke="rgba(255,255,255,0.10)"/><rect x="946" y="336" width="20" height="20" rx="6" fill="rgba(207,209,215,0.06)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="1066" y="346" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">tint 38%</text>
+    </g>
+    <g>
+      <rect x="44" y="378" width="244" height="132" rx="14" fill="#11161d" stroke="rgba(255,255,255,0.10)"/>
+      <rect x="44" y="378" width="244" height="3" rx="1.5" fill="#87602c"/>
+      <text x="58" y="408" font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" fill="#e8eaed">sand</text>
+      <text x="274" y="408" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" fill="#8b93a1">72° · c0.09</text>
+      <text x="58" y="428" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">LIGHT</text>
+      <rect x="58" y="438" width="20" height="20" rx="6" fill="#f9efea" stroke="rgba(255,255,255,0.10)"/><rect x="82" y="438" width="20" height="20" rx="6" fill="#fff9f5" stroke="rgba(255,255,255,0.10)"/><rect x="106" y="438" width="20" height="20" rx="6" fill="#87602c" stroke="rgba(255,255,255,0.10)"/><rect x="130" y="438" width="20" height="20" rx="6" fill="#0c0805" stroke="rgba(255,255,255,0.10)"/><rect x="154" y="438" width="20" height="20" rx="6" fill="rgba(83,75,71,0.05)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="58" y="478" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">DARK</text>
+      <rect x="58" y="488" width="20" height="20" rx="6" fill="#0d0806" stroke="rgba(255,255,255,0.10)"/><rect x="82" y="488" width="20" height="20" rx="6" fill="#17110f" stroke="rgba(255,255,255,0.10)"/><rect x="106" y="488" width="20" height="20" rx="6" fill="#daae80" stroke="rgba(255,255,255,0.10)"/><rect x="130" y="488" width="20" height="20" rx="6" fill="#f5efe9" stroke="rgba(255,255,255,0.10)"/><rect x="154" y="488" width="20" height="20" rx="6" fill="rgba(217,206,201,0.06)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="274" y="498" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">tint 62%</text>
+    </g>
+    <g>
+      <rect x="308" y="378" width="244" height="132" rx="14" fill="#11161d" stroke="rgba(255,255,255,0.10)"/>
+      <rect x="308" y="378" width="244" height="3" rx="1.5" fill="#2466c3"/>
+      <text x="322" y="408" font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" fill="#e8eaed">cobalt</text>
+      <text x="538" y="408" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" fill="#8b93a1">258° · c0.16</text>
+      <text x="322" y="428" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">LIGHT</text>
+      <rect x="322" y="438" width="20" height="20" rx="6" fill="#ecf1f4" stroke="rgba(255,255,255,0.10)"/><rect x="346" y="438" width="20" height="20" rx="6" fill="#f7fbfe" stroke="rgba(255,255,255,0.10)"/><rect x="370" y="438" width="20" height="20" rx="6" fill="#2466c3" stroke="rgba(255,255,255,0.10)"/><rect x="394" y="438" width="20" height="20" rx="6" fill="#07090c" stroke="rgba(255,255,255,0.10)"/><rect x="418" y="438" width="20" height="20" rx="6" fill="rgba(74,78,80,0.05)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="322" y="478" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">DARK</text>
+      <rect x="322" y="488" width="20" height="20" rx="6" fill="#070a0c" stroke="rgba(255,255,255,0.10)"/><rect x="346" y="488" width="20" height="20" rx="6" fill="#111416" stroke="rgba(255,255,255,0.10)"/><rect x="370" y="488" width="20" height="20" rx="6" fill="#79b8ff" stroke="rgba(255,255,255,0.10)"/><rect x="394" y="488" width="20" height="20" rx="6" fill="#edf0f6" stroke="rgba(255,255,255,0.10)"/><rect x="418" y="488" width="20" height="20" rx="6" fill="rgba(204,210,213,0.06)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="538" y="498" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">tint 32%</text>
+    </g>
+    <g>
+      <rect x="572" y="378" width="244" height="132" rx="14" fill="#11161d" stroke="rgba(255,255,255,0.10)"/>
+      <rect x="572" y="378" width="244" height="3" rx="1.5" fill="#6d6769"/>
+      <text x="586" y="408" font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" fill="#e8eaed">graphite</text>
+      <text x="802" y="408" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" fill="#8b93a1">0° · c0.01</text>
+      <text x="586" y="428" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">LIGHT</text>
+      <rect x="586" y="438" width="20" height="20" rx="6" fill="#ededed" stroke="rgba(255,255,255,0.10)"/><rect x="610" y="438" width="20" height="20" rx="6" fill="#fafafa" stroke="rgba(255,255,255,0.10)"/><rect x="634" y="438" width="20" height="20" rx="6" fill="#6d6769" stroke="rgba(255,255,255,0.10)"/><rect x="658" y="438" width="20" height="20" rx="6" fill="#0b0809" stroke="rgba(255,255,255,0.10)"/><rect x="682" y="438" width="20" height="20" rx="6" fill="rgba(78,77,77,0.05)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="586" y="478" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">DARK</text>
+      <rect x="586" y="488" width="20" height="20" rx="6" fill="#090909" stroke="rgba(255,255,255,0.10)"/><rect x="610" y="488" width="20" height="20" rx="6" fill="#151515" stroke="rgba(255,255,255,0.10)"/><rect x="634" y="488" width="20" height="20" rx="6" fill="#bdb5b7" stroke="rgba(255,255,255,0.10)"/><rect x="658" y="488" width="20" height="20" rx="6" fill="#f4eef0" stroke="rgba(255,255,255,0.10)"/><rect x="682" y="488" width="20" height="20" rx="6" fill="rgba(210,208,209,0.06)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="802" y="498" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">tint 8%</text>
+    </g>
+    <g>
+      <rect x="836" y="378" width="244" height="132" rx="14" fill="#11161d" stroke="rgba(255,255,255,0.10)"/>
+      <rect x="836" y="378" width="244" height="3" rx="1.5" fill="#646e46"/>
+      <text x="850" y="408" font-family="Inter,'SF Pro Text','Segoe UI',system-ui,sans-serif" font-size="13" font-weight="600" fill="#e8eaed">moss</text>
+      <text x="1066" y="408" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="10" fill="#8b93a1">120° · c0.06</text>
+      <text x="850" y="428" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">LIGHT</text>
+      <rect x="850" y="438" width="20" height="20" rx="6" fill="#f1f0ea" stroke="rgba(255,255,255,0.10)"/><rect x="874" y="438" width="20" height="20" rx="6" fill="#fcfbf5" stroke="rgba(255,255,255,0.10)"/><rect x="898" y="438" width="20" height="20" rx="6" fill="#646e46" stroke="rgba(255,255,255,0.10)"/><rect x="922" y="438" width="20" height="20" rx="6" fill="#090a06" stroke="rgba(255,255,255,0.10)"/><rect x="946" y="438" width="20" height="20" rx="6" fill="rgba(78,77,71,0.05)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="850" y="478" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">DARK</text>
+      <rect x="850" y="488" width="20" height="20" rx="6" fill="#0a0906" stroke="rgba(255,255,255,0.10)"/><rect x="874" y="488" width="20" height="20" rx="6" fill="#14140f" stroke="rgba(255,255,255,0.10)"/><rect x="898" y="488" width="20" height="20" rx="6" fill="#b2be8f" stroke="rgba(255,255,255,0.10)"/><rect x="922" y="488" width="20" height="20" rx="6" fill="#eff1ea" stroke="rgba(255,255,255,0.10)"/><rect x="946" y="488" width="20" height="20" rx="6" fill="rgba(211,209,201,0.06)" stroke="rgba(255,255,255,0.10)"/>
+      <text x="1066" y="498" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9" fill="#8b93a1">tint 48%</text>
+    </g>
+  <text x="44" y="552" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="9.5" fill="#8b93a1">每行：底色 / 卡片层 / 品牌 / 正文 / 边框　·　生成源：src/client/palette.ts</text>
+</svg>
