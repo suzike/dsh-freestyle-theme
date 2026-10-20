@@ -16,7 +16,7 @@ export type Translate = (key: string, vars?: Record<string, string | number>) =>
 
 const zh = {
   // ── plugin / settings row ───────────────────────────────────────────────
-  'plugin.title': '自由主题',
+  'plugin.title': 'FreeStyle 主题',
   'plugin.description': '用 OKLCH 色彩引擎，为 DeepSeek Harness 调一套只属于你的皮肤。',
 
   'row.hint': '品牌色 · 中性偏向 · 明度骨架 · 状态簇，四轴自由组合',
@@ -234,7 +234,7 @@ export type DictKey = keyof typeof zh
 
 /** English mirror; the explicit type enforces key parity at compile time. */
 export const en: Record<DictKey, string> = {
-  'plugin.title': 'Freeform theme',
+  'plugin.title': 'FreeStyle Theme',
   'plugin.description':
     'Dial in a DeepSeek Harness skin of your own with an OKLCH colour engine.',
 
