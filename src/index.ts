@@ -140,15 +140,18 @@ interface StoredTheme {
 function sanitiseTheme(raw: unknown): StoredTheme | null {
   if (!raw || typeof raw !== 'object') return null
   const value = raw as Record<string, unknown>
-  if (typeof value.id !== 'string' || value.id.length === 0 || value.id.length > 64) return null
-  if (typeof value.name !== 'string' || value.name.length === 0 || value.name.length > 48) return null
+  // Over-long values are truncated rather than dropped: a 80-character name is
+  // a naming mistake, not evidence that the theme is unusable.
+  const id = typeof value.id === 'string' ? value.id.trim().slice(0, 64) : ''
+  const name = typeof value.name === 'string' ? value.name.trim().slice(0, 48) : ''
+  if (!id || !name) return null
   if (!value.spec || typeof value.spec !== 'object') return null
   const now = Date.now()
   const created = typeof value.createdAt === 'number' && Number.isFinite(value.createdAt) ? value.createdAt : now
   const updated = typeof value.updatedAt === 'number' && Number.isFinite(value.updatedAt) ? value.updatedAt : created
   return {
-    id: value.id,
-    name: value.name.slice(0, 48),
+    id,
+    name,
     spec: value.spec as Record<string, unknown>,
     createdAt: created,
     updatedAt: updated,

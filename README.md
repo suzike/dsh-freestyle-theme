@@ -188,17 +188,18 @@ dsh-freestyle-theme/
 ## ✅ 质量护栏
 
 ```bash
-pnpm test          # 23 项单元测试，直接跑 TS 源码
+pnpm test          # 39 项单元测试，直接跑 TS 源码
 pnpm check:tokens  # 令牌名 / 令牌数 / 对比度 / 分享码
 ```
 
-`pnpm test` 覆盖三块最容易静默出错的地方：
+`pnpm test` 覆盖四块最容易静默出错的地方：
 
 | 测试 | 守住的东西 |
 |---|---|
 | `palette.test.mjs` | 119 个令牌成对、明暗层级单调、12 套预设互不重复、分享码无损、恶意输入被 clamp、`presetSpec` 接受 id 或对象 |
 | `contrast.test.mjs` | WCAG 21:1 基准、APCA 极性、12 套预设 × 明暗 × 20 组对比全绿、一键修复只动明度且确实收敛 |
 | `generate.test.mjs` | OKLCH 参考点、取色权重归一、空/透明图不炸、暗图自动选暗色、无模型时本地候选仍可用 |
+| `host.test.mjs` | 三条路由端到端：原子写不留临时文件、坏条目不拖垮整次保存、超长名截断、超大 body 拒绝、模型失败降级为错误码 |
 
 `pnpm check:tokens` 额外把源码里引用到的每个 `--dsw-*` 与已装壳的
 `dsh-client-ui-theme/lib/client.js` 做差集——**拼错的令牌不会报错，只会静默丢样式**，

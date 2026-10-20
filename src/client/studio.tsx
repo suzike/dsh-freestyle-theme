@@ -405,6 +405,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
   const [railTab, setRailTab] = useState<'templates' | 'library'>('templates')
   const [search, setSearch] = useState('')
   const [library, setLibrary] = useState<StoredTheme[]>([])
+  const [hostDown, setHostDown] = useState(false)
   const [toast, setToast] = useState<{ text: string; tone: 'ok' | 'error' } | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
   const [cmdOpen, setCmdOpen] = useState(false)
@@ -469,7 +470,9 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
     const local = readJson<StoredTheme[]>(STORAGE_LIBRARY) ?? []
     setLibrary(local)
     void fetchLibrary().then((remote) => {
-      if (alive && remote && remote.length > 0) setLibrary(remote)
+      if (!alive) return
+      if (remote === null) setHostDown(true)
+      else if (remote.length > 0) setLibrary(remote)
     })
     return () => {
       alive = false
@@ -553,9 +556,9 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
     setLibrary(next)
     writeJson(STORAGE_LIBRARY, next)
     void saveLibrary(next).then((ok) => {
-      if (ok) flash(t('msg.saved'))
+      setHostDown(!ok)
+      flash(ok ? t('msg.saved') : t('err.noHost'), ok ? 'ok' : 'error')
     })
-    flash(t('msg.saved'))
   }, [flash, library, name, spec, t])
 
   const deleteTheme = useCallback(
@@ -596,7 +599,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
         setGenPreview(preview)
         flash(format(t('generate.done'), { n: 4 }))
       } catch {
-        flash(t('msg.error'), 'error')
+        flash(t('generate.failed'), 'error')
       } finally {
         setGenBusy(false)
       }
@@ -613,8 +616,11 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
     try {
       const { specs, source } = await aiCandidates(genPrompt, 4)
       setGenCandidates(specs)
-      if (source === 'local') flash(t('err.noLlm'))
+      if (specs.length === 0) flash(t('generate.failed'), 'error')
+      else if (source === 'local') flash(t('err.noLlm'))
       else flash(format(t('generate.done'), { n: specs.length }))
+    } catch {
+      flash(t('generate.failed'), 'error')
     } finally {
       setGenBusy(false)
     }
@@ -859,6 +865,11 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
           <div style={{ padding: '6px 8px 4px' }}>
             <input className="ft-input" placeholder={t('rail.search')} value={search} onChange={(event) => setSearch(event.target.value)} />
           </div>
+          {railTab === 'library' && hostDown && (
+            <div style={{ padding: '0 10px 6px', fontSize: 10.5, lineHeight: 1.4, color: 'var(--dsw-alias-state-warn-label, #b45309)' }}>
+              {t('err.noHost')}
+            </div>
+          )}
           <div className="ft-list-body">
             {railTab === 'templates' &&
               presets.map((preset) => {
@@ -1110,7 +1121,14 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClose 
                   <Ico name="contrast" size={12} />{t('a11y.fix')}
                 </button>
               </div>
+              <div style={{ display: 'flex', gap: 10, fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary)' }}>
+                <span>{t('a11y.wcag')} · 4.5:1 / 3:1</span>
+                <span>{t('a11y.apca')} · Lc 60 / 45 / 30</span>
+              </div>
               <div style={{ fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary)' }}>{t('a11y.locked')}</div>
+              {summary.passed === summary.total && (
+                <div style={{ fontSize: 10.5, color: 'var(--dsw-alias-state-success-primary, #16a34a)' }}>{t('a11y.fine')}</div>
+              )}
               <div className="ft-audit-list">
                 {results.map((result) => (
                   <AuditRow key={result.id} t={t} result={result} />

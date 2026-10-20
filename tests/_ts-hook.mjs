@@ -21,4 +21,8 @@ export async function resolve(spec, ctx, next) {
   pathToFileURL(join(root, 'tests', 'hook.mjs')),
 )
 
-export const load = (name) => import(pathToFileURL(join(root, 'src/client', name + '.ts')).href)
+export const load = (name) => {
+  const relative = name.endsWith('.ts') ? name : `${name}.ts`
+  const file = relative.includes('/') ? join(root, 'src', relative) : join(root, 'src/client', relative)
+  return import(pathToFileURL(file).href)
+}
