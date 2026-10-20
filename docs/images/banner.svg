@@ -22,7 +22,7 @@
     <text x="60" y="80" font-size="60" font-weight="700" fill="#ffffff" text-anchor="middle">T</text>
   </g>
   <g transform="translate(76,238)">
-    <text x="0" y="0" font-size="44" font-weight="700" fill="#1a1f2e" letter-spacing="1">freestyle-dsh-theme</text>
+    <text x="0" y="0" font-size="44" font-weight="700" fill="#1a1f2e" letter-spacing="1">dsh-freestyle-theme</text>
     <text x="0" y="42" font-size="22" fill="#5b6478">DeepSeek Harness 主题体验插件</text>
     <text x="0" y="78" font-size="16" fill="#6b7488">OKLCH 主题提案 · 主题设计器 · 一键换肤 · 跨重启持久化</text>
   </g>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="FreeStyle Theme">
+  <defs>
+    <linearGradient id="fs-bg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2b2f45"/>
+      <stop offset="1" stop-color="#14161f"/>
+    </linearGradient>
+    <radialGradient id="fs-primary" cx="0" cy="0" r="1" gradientTransform="translate(24 24) rotate(48) scale(17)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8ea2ff"/>
+      <stop offset="1" stop-color="#5566e0"/>
+    </radialGradient>
+    <radialGradient id="fs-secondary" cx="0" cy="0" r="1" gradientTransform="translate(42 27) rotate(48) scale(16)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffb98a"/>
+      <stop offset="1" stop-color="#e07a52"/>
+    </radialGradient>
+    <radialGradient id="fs-panel" cx="0" cy="0" r="1" gradientTransform="translate(32 43) rotate(90) scale(15)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9bf0c9"/>
+      <stop offset="1" stop-color="#3fae8a"/>
+    </radialGradient>
+    <clipPath id="fs-clip">
+      <rect x="3" y="3" width="58" height="58" rx="16"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#fs-clip)">
+    <rect x="3" y="3" width="58" height="58" fill="url(#fs-bg)"/>
+    <g opacity=".92" style="mix-blend-mode:screen">
+      <circle cx="25" cy="25" r="15" fill="url(#fs-primary)"/>
+      <circle cx="41" cy="27" r="14" fill="url(#fs-secondary)" opacity=".85"/>
+      <circle cx="33" cy="41" r="13.5" fill="url(#fs-panel)" opacity=".8"/>
+    </g>
+    <circle cx="25" cy="25" r="15" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="1.1"/>
+    <circle cx="41" cy="27" r="14" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="1.1"/>
+    <circle cx="33" cy="41" r="13.5" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="1.1"/>
+    <rect x="3.6" y="3.6" width="56.8" height="56.8" rx="15.4" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width="1.2"/>
+  </g>
+</svg>

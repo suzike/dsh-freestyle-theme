@@ -1,8 +1,13 @@
-# freestyle-dsh-theme bundle patch: inserts the dual-face plugin row into the web
-# profile roster. Applied as a profile bundle layer (the `dsh.bundle.patch`
-# manifest field). The node half (exports ".") runs in the host process (AI
-# naming route via llm), and the `dsh.client` declaration in package.json
-# makes the browser half (exports "./client") load in the web GUI.
+# dsh-freestyle-theme bundle patch — inserts the dual-face plugin row into the
+# profile roster. Applied as a profile bundle layer (`dsh.bundle.patch`).
+#
+# Host face (exports "."): the `/api/dsh-freestyle-theme/name` route that turns
+# a theme's OKLCH tokens into a name/tags/description through the default model
+# (`llm` + `agentDefaultModel`), so no model credential ever reaches the browser.
+#
+# Client face (exports "./client", declared by `dsh.client.platform = "web"`):
+# the settings-page proposer + designer, loaded by the web shell's module
+# loader through the `dsh.client` manifest field in package.json.
 - insert:
-    - id: theme
-      name: '@linxin666/freestyle-dsh-theme'
+    - id: freestyle-theme
+      name: dsh-freestyle-theme

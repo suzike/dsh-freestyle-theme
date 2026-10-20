@@ -96,7 +96,7 @@ export function clientBundle(
   return ({ env }) => {
     const face = buildFace(env?.DSH_BUILD_FACE)
     const client = clientConfig(id, face === undefined
-      ? 'src/client/index.ts'
+      ? (options.clientEntry ?? 'src/client/index.ts')
       : 'lib/types/client/index.js')
     const node = [lib, ...(options.companions ?? [])]
     if (face === 'host') return options.hostPhase === true ? node : [SKIP_WORKSPACE_BUILD]
@@ -158,6 +158,12 @@ export function mobileBundle(id: string, entry: string): UserConfig {
 interface ClientBundleOptions {
   /** Emit the Node-side artifacts during the Host pass instead of the Client pass. */
   readonly hostPhase?: boolean
+  /**
+   * Browser entry during the build-time pass; defaults to `src/client/index.ts`.
+   * A JSX package spells its own `.tsx` entry here (the declaration pass always
+   * reads `lib/types/client/index.js`).
+   */
+  readonly clientEntry?: string
   /** Additional Node-side configs emitted alongside the package library. */
   readonly companions?: readonly UserConfig[]
   /** Overrides for the package's primary Node-side library config. */

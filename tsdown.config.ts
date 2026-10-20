@@ -1,16 +1,20 @@
 /**
- * Standalone build config for the freestyle-dsh-theme plugin.
+ * Standalone build config for dsh-freestyle-theme.
  *
- * Uses the repo's shared client-bundle preset (shared/tsdown.client.ts):
- * node-half lib/ (host AI-naming route) plus the browser bundle lib/client.js
- * (closure-factory artifact for the GUI's __ModuleLoader__). The client entry
- * is auto-detected at src/client/index.ts by the preset.
+ * Two artifacts, one package (a "dual-face" plugin):
+ *   - `lib/index.js`   — the host face. ESM for the Cordis Loader; registers the
+ *                        AI-naming route on `webServer` using the host `llm` and
+ *                        `agentDefaultModel` services. No npm runtime deps.
+ *   - `lib/client.js`  — the browser face. Closure-factory artifact for the web
+ *                        shell's `window.__ModuleLoader__`: externals resolve
+ *                        through the loader's frozen module table (see
+ *                        `shared/web-platform.ts`), everything else is inlined.
+ *
+ * Types come from `tsc -p tsconfig.build.json` (lib/types), never from tsdown,
+ * so the banner/footer stay parseable.
  */
 import { clientBundle } from './shared/tsdown.client.ts'
 
-export default clientBundle('@linxin666/freestyle-dsh-theme', ['src/index.ts'], {
-  libExternal: [
-    '@deepseek-ai/dsh-host-webserver',
-    '@deepseek-ai/dsh-settings',
-  ],
+export default clientBundle('dsh-freestyle-theme', ['src/index.ts'], {
+  clientEntry: 'src/client/index.tsx',
 })
