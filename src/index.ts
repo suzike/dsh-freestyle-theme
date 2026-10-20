@@ -1,249 +1,386 @@
 /**
- * dsh-freestyle-theme — host face.
+ * Host half.
  *
- * The browser half does all palette work locally (no network, no model) and only
- * needs the host for one thing: turning a finished token set into a name, a few
- * tags and a one-line description. That call goes through the host's own `llm`
- * and `agentDefaultModel` services, so the GUI never sees a provider credential
- * and always names with the model the user already selected.
- *
- * Route: `POST /api/dsh-freestyle-theme/name`
- *   body   { tokens: unknown, locale?: 'zh' | 'en' }
- *   200    { ok: true, text } | { ok: false, code, detail? }
- *   codes  bad-request | unavailable | no-model | failed
- *
- * The response never throws a localized sentence: `code` is stable, and the
- * client renders its own text from its locale dictionary.
+ * Three small JSON routes under `/api/dsh-freestyle-theme`: the shared theme
+ * library, image-free generation from a description, and naming. Everything
+ * that touches the filesystem or the model stays here; the client half never
+ * gets a Node import.
  *
  * @module dsh-freestyle-theme
  */
-import type { Context } from '@deepseek-ai/cordis'
 
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { homedir } from 'node:os'
+import { dirname, join } from 'node:path'
+
+/** Cordis plugin name. */
 export const name = 'dsh-freestyle-theme'
 
-/** `webServer` is the only host service this plugin requires at load time. */
+/** The web server is the only capability this half needs. */
 export const inject = ['webServer']
 
-/** Largest accepted request body; a token dump is a few KiB, never 64. */
-const MAX_BODY_BYTES = 64 * 1024
+const API = '/api/dsh-freestyle-theme'
+const THEMES_ROUTE = `${API}/themes`
+const GENERATE_ROUTE = `${API}/generate`
+const NAME_ROUTE = `${API}/name`
 
-/** Route path; mirrored by `NAME_ROUTE_PATH` in the client half. */
-const NAME_ROUTE = '/api/dsh-freestyle-theme/name'
+/** Upper bounds: the library is a convenience, not a database. */
+const MAX_THEMES = 120
+const MAX_BODY = 128 * 1024
+const MAX_CANDIDATES = 6
 
-/**
- * Naming instruction per UI locale. Both variants demand a bare JSON object:
- * the client parses the first `{…}` it finds, and a fenced block or a preamble
- * would otherwise turn into a junk name.
- */
-const SYSTEM_PROMPTS: Record<string, string> = {
-  zh: '你是品牌色彩与界面主题命名专家。给定一套 OKLCH 界面主题令牌，为它生成独特、具体、有画面感的主题身份。'
-    + '只输出一个 JSON 对象："{"name":"2到8个汉字的主题名","tags":["3到5个简短特征标签"],"desc":"20到50字的主题特征介绍"}。'
-    + '名称不得使用"我的主题""自定义主题"这类泛称；标签分别覆盖色彩、明暗、材质与氛围，且不与名称重复；介绍要说清主副色关系与适用感受。不要输出代码块、解释或任何 JSON 之外的文字。',
-  en: 'You are a brand color and interface-theme naming expert. Given a set of OKLCH interface theme tokens, produce a distinctive, concrete, evocative theme identity. '
-    + 'Output only one JSON object: {"name":"2-4 word theme name","tags":["3-5 short trait tags"],"desc":"one 12-25 word sentence"}. '
-    + 'Never use generic names like "My Theme" or "Custom Theme"; tags must separately cover color, lightness, material and mood without repeating the name; the description names the primary/secondary color relationship and how it feels. '
-    + 'No code fence, no explanation, no text outside the JSON object.',
+interface ServerResponse {
+  statusCode: number
+  setHeader(name: string, value: string): void
+  end(chunk?: string): void
 }
 
-/** Minimal async-iterable request surface; avoids a node:http type dependency. */
-interface RequestLike {
-  readonly method?: string
-  [Symbol.asyncIterator](): AsyncIterator<Uint8Array>
+interface IncomingRequest {
+  method?: string
+  on(event: 'data', handler: (chunk: { length: number; toString(encoding: string): string }) => void): void
+  on(event: 'end', handler: () => void): void
+  on(event: 'error', handler: (error: unknown) => void): void
+  on(event: 'aborted', handler: () => void): void
 }
 
-/** Minimal response surface this route owns end to end. */
-interface ResponseLike {
-  writeHead(status: number, headers: Record<string, string>): void
-  end(body?: string): void
-}
-
-/** A route as `webServer.register` accepts it. */
 interface RouteLike {
   kind: 'exact'
   path: string
-  handler: (req: RequestLike, res: ResponseLike) => void | Promise<void>
+  handler: (request: IncomingRequest, response: ServerResponse) => void | Promise<void>
 }
 
-/**
- * Local declaration of the one host service this plugin uses. The real
- * declaration ships with `@deepseek-ai/dsh-host-webserver`, which a plugin must
- * not depend on at runtime; narrowing it here keeps the package dependency-free
- * while `ctx.webServer` still type-checks.
- */
-declare module '@deepseek-ai/cordis' {
-  interface Context {
-    /** node:http route registration owned by the host web server. */
-    webServer: { register(route: RouteLike): () => void }
-  }
-}
-
-/** One model selection as `agentDefaultModel.currentSelection()` reports it. */
-interface ModelSelection {
-  provider?: string
-  model?: string
-  reasoningEffort?: string
-}
-
-/** One streamed chunk from `llm.stream()`; only the fields we read are typed. */
 interface LlmChunk {
   type?: string
   text?: string
-  reason?: { kind?: string; failure?: { message?: string } }
+  delta?: string
+  reason?: { kind?: string }
 }
 
-/** The two host services naming needs, resolved dynamically. */
-interface NameServices {
-  llm?: { stream(options: Record<string, unknown>): AsyncIterable<LlmChunk> }
-  agentDefaultModel?: { currentSelection(): ModelSelection | undefined }
+interface LlmService {
+  stream?(request: Record<string, unknown>): AsyncIterable<LlmChunk>
 }
 
-/**
- * Send one JSON response. `no-store` keeps a naming result from being cached
- * and `no-referrer` keeps the route's URL out of any outbound referer.
- * @param res - response the route owns.
- * @param status - HTTP status code.
- * @param body - JSON-serializable payload.
- */
-function writeJson(res: ResponseLike, status: number, body: unknown): void {
-  res.writeHead(status, {
-    'content-type': 'application/json; charset=utf-8',
-    'cache-control': 'no-store',
-    'referrer-policy': 'no-referrer',
+interface Selection {
+  provider?: string
+  providerId?: string
+  model?: string
+  modelId?: string
+}
+
+interface SelectionService {
+  currentSelection?(): Selection | undefined
+}
+
+interface HostContext {
+  webServer: { register(route: RouteLike): () => void }
+  get(name: string): unknown
+  effect?(fn: () => () => void, label?: string): unknown
+}
+
+/* ── plumbing ───────────────────────────────────────────────────────────── */
+
+function json(response: ServerResponse, status: number, body: unknown): void {
+  const payload = JSON.stringify(body)
+  response.statusCode = status
+  response.setHeader('content-type', 'application/json; charset=utf-8')
+  response.setHeader('cache-control', 'no-store')
+  response.setHeader('referrer-policy', 'no-referrer')
+  response.setHeader('x-content-type-options', 'nosniff')
+  response.end(payload)
+}
+
+/** Read a JSON body, refusing anything larger than `MAX_BODY`. */
+function readBody(request: IncomingRequest): Promise<unknown> {
+  return new Promise((resolve) => {
+    let size = 0
+    let aborted = false
+    const chunks: string[] = []
+    request.on('data', (chunk) => {
+      if (aborted) return
+      size += chunk.length
+      if (size > MAX_BODY) {
+        aborted = true
+        resolve(undefined)
+        return
+      }
+      chunks.push(chunk.toString('utf8'))
+    })
+    request.on('end', () => {
+      if (aborted) return
+      if (chunks.length === 0) {
+        resolve(undefined)
+        return
+      }
+      try {
+        resolve(JSON.parse(chunks.join('')))
+      } catch {
+        resolve(undefined)
+      }
+    })
+    request.on('error', () => resolve(undefined))
+    request.on('aborted', () => resolve(undefined))
   })
-  res.end(JSON.stringify(body))
 }
 
-/**
- * Read a bounded JSON body.
- * @param req - incoming request.
- * @returns the parsed object, or undefined when the body is too large, not
- * JSON, or not an object.
- */
-async function readJsonBody(req: RequestLike): Promise<Record<string, unknown> | undefined> {
-  const chunks: Uint8Array[] = []
-  let size = 0
-  for await (const chunk of req) {
-    size += chunk.byteLength
-    if (size > MAX_BODY_BYTES) return undefined
-    chunks.push(chunk)
+/** The library file lives next to the rest of the user's DSH state. */
+function libraryPath(): string {
+  const home = process.env.DSH_HOME && process.env.DSH_HOME.trim() ? process.env.DSH_HOME.trim() : join(homedir(), '.dsh')
+  return join(home, 'freestyle-theme', 'themes.json')
+}
+
+interface StoredTheme {
+  id: string
+  name: string
+  spec: Record<string, unknown>
+  createdAt: number
+  updatedAt: number
+}
+
+/** Accept only the fields the library understands, and coerce numbers. */
+function sanitiseTheme(raw: unknown): StoredTheme | null {
+  if (!raw || typeof raw !== 'object') return null
+  const value = raw as Record<string, unknown>
+  if (typeof value.id !== 'string' || value.id.length === 0 || value.id.length > 64) return null
+  if (typeof value.name !== 'string' || value.name.length === 0 || value.name.length > 48) return null
+  if (!value.spec || typeof value.spec !== 'object') return null
+  const now = Date.now()
+  const created = typeof value.createdAt === 'number' && Number.isFinite(value.createdAt) ? value.createdAt : now
+  const updated = typeof value.updatedAt === 'number' && Number.isFinite(value.updatedAt) ? value.updatedAt : created
+  return {
+    id: value.id,
+    name: value.name.slice(0, 48),
+    spec: value.spec as Record<string, unknown>,
+    createdAt: created,
+    updatedAt: updated,
   }
-  const joined = new Uint8Array(size)
-  let offset = 0
-  for (const chunk of chunks) {
-    joined.set(chunk, offset)
-    offset += chunk.byteLength
+}
+
+/* ── routes ─────────────────────────────────────────────────────────────── */
+
+/** `GET`/`PUT /themes` — the shared library. */
+async function themesRoute(request: IncomingRequest, response: ServerResponse): Promise<void> {
+  const file = libraryPath()
+
+  if (request.method === 'GET') {
+    try {
+      const raw = await readFile(file, 'utf8')
+      const parsed = JSON.parse(raw) as { themes?: unknown[] }
+      const themes = Array.isArray(parsed.themes)
+        ? parsed.themes.map(sanitiseTheme).filter((theme): theme is StoredTheme => theme !== null).slice(0, MAX_THEMES)
+        : []
+      json(response, 200, { ok: true, themes })
+    } catch {
+      json(response, 200, { ok: true, themes: [] })
+    }
+    return
   }
+
+  if (request.method !== 'PUT') {
+    json(response, 405, { ok: false, code: 'method', message: 'use GET or PUT' })
+    return
+  }
+
+  const body = (await readBody(request)) as { themes?: unknown[] } | undefined
+  if (!body || !Array.isArray(body.themes)) {
+    json(response, 400, { ok: false, code: 'invalid', message: 'expected { themes: [] }' })
+    return
+  }
+
+  const themes = body.themes.map(sanitiseTheme).filter((theme): theme is StoredTheme => theme !== null).slice(0, MAX_THEMES)
   try {
-    const parsed: unknown = JSON.parse(new TextDecoder().decode(joined))
-    return typeof parsed === 'object' && parsed !== null
-      ? parsed as Record<string, unknown>
-      : undefined
+    await mkdir(dirname(file), { recursive: true })
+    const temporary = `${file}.${process.pid}.tmp`
+    await writeFile(temporary, JSON.stringify({ version: 1, themes }, null, 2), 'utf8')
+    await rename(temporary, file)
+    json(response, 200, { ok: true, saved: themes.length })
+  } catch (error) {
+    json(response, 500, { ok: false, code: 'io', message: error instanceof Error ? error.message : 'write failed' })
+  }
+}
+
+const GENERATE_SYSTEM = `You are a colour-systems designer. Given a description, propose theme candidates for a software UI.
+Reply with JSON only, no prose: {"candidates":[{...}]}.
+Each candidate: {"th":hue degrees 0-360,"th2":hue,"ths":hue,"mode":"light"|"dark","c1":0.02-0.37,"c2":0.01-0.2,"sc":0-0.04,"neutralTint":0.05-0.95,"spread":0.04-0.2,"stateBoost":0.2-1.2}
+Hues must follow a real colour relationship (analogous, complementary, split, or triadic). Keep chroma conservative: a professional UI accent rarely exceeds 0.16. Vary the neutral temperature between candidates so they read as different designs, not recolours.`
+
+function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback
+  return Math.min(max, Math.max(min, value))
+}
+
+/** Accept a model's candidate and clamp it into the valid coordinate space. */
+function sanitiseCandidate(raw: unknown): Record<string, unknown> | null {
+  if (!raw || typeof raw !== 'object') return null
+  const value = raw as Record<string, unknown>
+  return {
+    th: clampNumber(value.th, 0, 360, 168),
+    th2: clampNumber(value.th2, 0, 360, 190),
+    ths: clampNumber(value.ths, 0, 360, 168),
+    mode: value.mode === 'dark' ? 'dark' : 'light',
+    c1: clampNumber(value.c1, 0.02, 0.37, 0.1),
+    c2: clampNumber(value.c2, 0.01, 0.2, 0.06),
+    sc: clampNumber(value.sc, 0, 0.04, 0.008),
+    neutralTint: clampNumber(value.neutralTint, 0.05, 0.95, 0.35),
+    spread: clampNumber(value.spread, 0.04, 0.2, 0.1),
+    stateBoost: clampNumber(value.stateBoost, 0.2, 1.2, 0.55),
+  }
+}
+
+/** Pull the first JSON object/array out of a model reply. */
+function firstJson(text: string): unknown {
+  const objectStart = text.indexOf('{')
+  const arrayStart = text.indexOf('[')
+  const start = objectStart === -1 ? arrayStart : arrayStart === -1 ? objectStart : Math.min(objectStart, arrayStart)
+  if (start === -1) return null
+  const open = text[start]
+  const close = open === '{' ? '}' : ']'
+  const end = text.lastIndexOf(close)
+  if (end <= start) return null
+  try {
+    return JSON.parse(text.slice(start, end + 1))
   } catch {
-    return undefined
+    return null
   }
 }
 
-/**
- * Build the model request for one body.
- * @param selection - default model selection.
- * @param system - locale-specific naming instruction.
- * @param tokens - theme tokens, forwarded verbatim as the user turn.
- * @returns `llm.stream` options.
- */
-function nameRequest(
-  selection: ModelSelection & { provider: string; model: string },
+/** Run one streaming completion and return the accumulated text. */
+async function complete(
+  ctx: HostContext,
   system: string,
-  tokens: unknown,
-): Record<string, unknown> {
-  return {
-    provider: selection.provider,
-    model: selection.model,
-    ...selection.reasoningEffort === undefined ? {} : { reasoningEffort: selection.reasoningEffort },
-    system,
-    messages: [{ role: 'user', content: [{ type: 'text', text: JSON.stringify(tokens ?? {}) }] }],
-    temperature: 0.85,
-    maxTokens: 320,
-  }
-}
+  user: string,
+  maxTokens: number,
+): Promise<{ text: string; code?: string }> {
+  const llm = ctx.get('llm') as LlmService | undefined
+  if (!llm?.stream) return { text: '', code: 'no-llm' }
+  const selection = (ctx.get('agentDefaultModel') as SelectionService | undefined)?.currentSelection?.()
+  const provider = selection?.provider ?? selection?.providerId
+  const model = selection?.model ?? selection?.modelId
+  if (!provider || !model) return { text: '', code: 'no-model' }
 
-/**
- * Drain one model stream into the assistant text.
- * @param llm - host llm service.
- * @param options - `llm.stream` options.
- * @returns the accumulated text, or a failure code and detail.
- */
-async function collect(
-  llm: NonNullable<NameServices['llm']>,
-  options: Record<string, unknown>,
-): Promise<{ text: string } | { code: 'failed'; detail?: string }> {
   let text = ''
-  for await (const chunk of llm.stream(options)) {
-    if (chunk.type === 'text-delta' && typeof chunk.text === 'string') {
-      text += chunk.text
-      continue
+  try {
+    const stream = llm.stream({
+      provider,
+      model,
+      system,
+      messages: [{ role: 'user', content: [{ type: 'text', text: user }] }],
+      temperature: 0.8,
+      maxTokens,
+    })
+    for await (const chunk of stream) {
+      if (chunk.type === 'text-delta') text += chunk.text ?? chunk.delta ?? ''
+      else if (chunk.type === 'finish' && (chunk.reason?.kind === 'error' || chunk.reason?.kind === 'aborted')) {
+        return { text: '', code: 'llm' }
+      }
     }
-    if (chunk.type !== 'finish') continue
-    const kind = chunk.reason?.kind
-    if (kind === 'error' || kind === 'aborted') {
-      return { code: 'failed', detail: chunk.reason?.failure?.message ?? kind }
-    }
-  }
-  return { text }
-}
-
-/**
- * Create the route, resolving services per request so a late-mounted model
- * service is picked up without re-registering.
- * @param ctx - plugin context.
- * @returns the route the web server dispatches to.
- */
-function makeNameRoute(ctx: Context): RouteLike {
-  return {
-    kind: 'exact',
-    path: NAME_ROUTE,
-    handler: async (req, res) => {
-      if (req.method !== 'POST') {
-        writeJson(res, 405, { ok: false, code: 'bad-request', detail: 'POST only' })
-        return
-      }
-      const body = await readJsonBody(req)
-      if (body === undefined) {
-        writeJson(res, 400, { ok: false, code: 'bad-request', detail: 'invalid JSON body' })
-        return
-      }
-      const services = ctx as unknown as NameServices
-      const llm = services.llm
-      const selection = services.agentDefaultModel?.currentSelection()
-      if (llm === undefined || services.agentDefaultModel === undefined) {
-        writeJson(res, 200, { ok: false, code: 'unavailable' })
-        return
-      }
-      if (selection?.provider === undefined || selection.model === undefined) {
-        writeJson(res, 200, { ok: false, code: 'no-model' })
-        return
-      }
-      const locale = body.locale === 'en' ? 'en' : 'zh'
-      const result = await collect(
-        llm,
-        nameRequest(
-          { ...selection, provider: selection.provider, model: selection.model },
-          SYSTEM_PROMPTS[locale] ?? SYSTEM_PROMPTS.zh,
-          body.tokens,
-        ),
-      )
-      if ('code' in result) {
-        writeJson(res, 200, { ok: false, ...result })
-        return
-      }
-      writeJson(res, 200, { ok: true, text: result.text })
-    },
+    return { text }
+  } catch {
+    return { text: '', code: 'llm' }
   }
 }
 
-/**
- * Register the naming route for the lifetime of this plugin.
- * @param ctx - host context; `webServer` is guaranteed by `inject`.
- */
-export function apply(ctx: Context): void {
-  ctx.effect(() => ctx.webServer.register(makeNameRoute(ctx)), 'dsh-freestyle-theme: name route')
+/** `POST /generate` — description to candidates. */
+async function generateRoute(ctx: HostContext, request: IncomingRequest, response: ServerResponse): Promise<void> {
+  if (request.method !== 'POST') {
+    json(response, 405, { ok: false, code: 'method', message: 'use POST' })
+    return
+  }
+  const body = (await readBody(request)) as { prompt?: unknown; count?: unknown } | undefined
+  const prompt = typeof body?.prompt === 'string' ? body.prompt.trim().slice(0, 600) : ''
+  if (!prompt) {
+    json(response, 400, { ok: false, code: 'invalid', message: 'prompt required' })
+    return
+  }
+  const count = Math.min(MAX_CANDIDATES, Math.max(1, Math.round(clampNumber(body?.count, 1, MAX_CANDIDATES, 4))))
+
+  const { text, code } = await complete(
+    ctx,
+    GENERATE_SYSTEM,
+    JSON.stringify({ request: prompt, count, language: 'the description may be Chinese' }),
+    900,
+  )
+  if (!text) {
+    json(response, 200, { ok: false, code: code ?? 'llm', candidates: [] })
+    return
+  }
+
+  const parsed = firstJson(text) as { candidates?: unknown[] } | unknown[] | null
+  const raw = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.candidates) ? parsed.candidates : []
+  const candidates = raw
+    .map(sanitiseCandidate)
+    .filter((candidate): candidate is Record<string, unknown> => candidate !== null)
+    .slice(0, count)
+  if (candidates.length === 0) {
+    json(response, 200, { ok: false, code: 'invalid', candidates: [] })
+    return
+  }
+  json(response, 200, { ok: true, candidates })
+}
+
+const NAME_SYSTEM = `You name UI colour themes. Reply with JSON only: {"name":"…","tags":["…","…"],"description":"…"}.
+The name is 2-6 words in the user's language, concrete and evocative, never "Theme 1". Tags: 3-5 short adjectives. The description is one sentence about the mood.`
+
+/** `POST /name` — a human name for a spec. */
+async function nameRoute(ctx: HostContext, request: IncomingRequest, response: ServerResponse): Promise<void> {
+  if (request.method !== 'POST') {
+    json(response, 405, { ok: false, code: 'method', message: 'use POST' })
+    return
+  }
+  const body = (await readBody(request)) as { spec?: unknown; locale?: unknown } | undefined
+  if (!body?.spec || typeof body.spec !== 'object') {
+    json(response, 400, { ok: false, code: 'invalid', message: 'spec required' })
+    return
+  }
+  const locale = typeof body.locale === 'string' ? body.locale.slice(0, 20) : 'zh'
+
+  const { text, code } = await complete(
+    ctx,
+    NAME_SYSTEM,
+    JSON.stringify({ spec: body.spec, language: locale.toLowerCase().startsWith('zh') ? 'Chinese' : 'English' }),
+    260,
+  )
+  if (!text) {
+    json(response, 200, { ok: false, code: code ?? 'llm' })
+    return
+  }
+  const parsed = firstJson(text) as { name?: unknown; tags?: unknown; description?: unknown } | null
+  const picked = typeof parsed?.name === 'string' ? parsed.name.trim().slice(0, 32) : ''
+  if (!picked) {
+    json(response, 200, { ok: false, code: 'invalid' })
+    return
+  }
+  json(response, 200, {
+    ok: true,
+    name: picked,
+    tags: Array.isArray(parsed?.tags)
+      ? parsed.tags.filter((tag): tag is string => typeof tag === 'string').slice(0, 5).map((tag) => tag.slice(0, 12))
+      : [],
+    description: typeof parsed?.description === 'string' ? parsed.description.slice(0, 140) : '',
+  })
+}
+
+/* ── registration ───────────────────────────────────────────────────────── */
+
+export function apply(ctx: HostContext): void {
+  const routes: RouteLike[] = [
+    { kind: 'exact', path: THEMES_ROUTE, handler: (request, response) => void themesRoute(request, response) },
+    { kind: 'exact', path: GENERATE_ROUTE, handler: (request, response) => void generateRoute(ctx, request, response) },
+    { kind: 'exact', path: NAME_ROUTE, handler: (request, response) => void nameRoute(ctx, request, response) },
+  ]
+
+  const register = (): (() => void) => {
+    const disposers = routes.map((route) => ctx.webServer.register(route))
+    return () => {
+      for (const dispose of disposers) {
+        try {
+          dispose()
+        } catch {
+          /* the server is shutting down */
+        }
+      }
+    }
+  }
+
+  if (typeof ctx.effect === 'function') ctx.effect(register, 'dsh-freestyle-theme: routes')
+  else register()
 }
