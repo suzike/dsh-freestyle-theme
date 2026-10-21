@@ -632,7 +632,10 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
     setAppliedSpec(spec)
     flash(ok ? t('msg.applied') : t('err.noTheme'), ok ? 'ok' : 'error')
     onApplied?.(spec, name)
-  }, [flash, name, onApplied, owner, spec, t, theme])
+    // Commit-and-exit: leaving a full-window layer up after "apply" reads as
+    // "the app is blocked". Close on the next frame so the toast is seen.
+    if (ok) window.setTimeout(() => close(), 220)
+  }, [close, flash, name, onApplied, owner, spec, t, theme])
 
   const reset = useCallback(() => {
     removeKey(STORAGE_SPEC)
@@ -919,7 +922,15 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
   const tiers: Tier[] = [0, 1, 2]
 
   return (
-    <div className={`ft-root ft-studio ${closing ? 'is-closing' : ''}`} ref={rootRef} role="dialog" aria-modal="true" aria-label={t('plugin.title')}>
+    <div
+      className={`ft-root ft-studio ${closing ? 'is-closing' : ''}`}
+      ref={rootRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('plugin.title')}
+      data-mode={spec.mode}
+      style={fullPalette(spec) as CSSProperties}
+    >
       <VisionFilters />
 
       {/* header */}
