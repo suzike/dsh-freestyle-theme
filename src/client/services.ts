@@ -26,6 +26,11 @@ export type Disposable = () => void
 export interface ThemeService {
   /** Replace token values owned by `source`, atomically for both modes. */
   overrideTokens?: (source: string, overrides: TokenOverrides) => Disposable
+  /** Current composed snapshot — used to read the built-in token table. */
+  getTheme?: () => {
+    themes?: Array<{ id?: string; colorScheme?: string; tokens?: Record<string, string> }>
+    active?: { colorScheme?: string; tokens?: Record<string, string> }
+  }
 }
 
 /** Options accepted by `slots.register`. */

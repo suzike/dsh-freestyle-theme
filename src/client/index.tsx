@@ -9,8 +9,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useState, type FC } from 'react'
+import { createPortal } from 'react-dom'
 import { DICTIONARIES, format, type Translate } from './locale'
-import { defaultSpec, fullPalette, generateTokens, normalizeSpec, type ThemeSpec } from './palette'
+import { defaultSpec, fullPalette, normalizeSpec, type ThemeSpec } from './palette'
+import { fullOverrides } from './retint'
 import { auditPalette, auditSummary } from './contrast'
 import {
   OverrideOwner,
@@ -104,7 +106,7 @@ const SettingsRow: FC<RowProps> = ({ ctx, t, theme, owner }) => {
     const stored = readJson<Record<string, unknown>>(STORAGE_SPEC)
     if (!stored) return
     const next = normalizeSpec(stored)
-    owner.set(generateTokens(next))
+    owner.set(fullOverrides(theme, next))
     setSpec(next)
     setApplied(true)
     // No cleanup here: this override belongs to `apply()` and must survive the
@@ -125,7 +127,7 @@ const SettingsRow: FC<RowProps> = ({ ctx, t, theme, owner }) => {
 
   const onApplied = useCallback(
     (next: ThemeSpec, themeName: string) => {
-      owner.set(generateTokens(next))
+      owner.set(fullOverrides(theme, next))
       setSpec(next)
       setApplied(true)
       setAppliedName(themeName)
@@ -192,16 +194,19 @@ const SettingsRow: FC<RowProps> = ({ ctx, t, theme, owner }) => {
         </button>
       </span>
 
-      {open && (
-        <Studio
-          t={t}
-          theme={theme}
-          initial={spec}
-          onApplied={onApplied}
-          onClear={onClear}
-          onClose={() => setOpen(false)}
-        />
-      )}
+      {open &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <Studio
+            t={t}
+            theme={theme}
+            initial={spec}
+            onApplied={onApplied}
+            onClear={onClear}
+            onClose={() => setOpen(false)}
+          />,
+          document.body,
+        )}
     </div>
   )
 }
@@ -215,7 +220,7 @@ export function apply(ctx: PluginContext): void {
   // Restore the last applied theme before the first paint, not when the
   // settings page happens to mount.
   const stored = readJson<Record<string, unknown>>(STORAGE_SPEC)
-  if (stored) owner.set(generateTokens(normalizeSpec(stored)))
+  if (stored) owner.set(fullOverrides(theme, normalizeSpec(stored)))
 
   if (typeof ctx.effect === 'function') {
     ctx.effect(() => ensureStyles(), 'dsh-freestyle-theme: styles')

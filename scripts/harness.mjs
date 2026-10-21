@@ -23,6 +23,45 @@ const spec = { ...palette.presetSpec(preset, mode), mode }
 const tokens = { ...palette.fullPalette(spec), ...palette.lookTokens(spec) }
 const vars = Object.entries(tokens).map(([k, v]) => `${k}:${v}`).join(';')
 
+// Tokens the shell defines beyond the 119 this design owns. The retint layer
+// must cover these too, otherwise the real app recolours in patches; the
+// harness proves that by projecting the whole map onto <body>.
+const EXTRA = {
+  '--dsw-alias-border-l3': ['#e4e7e4', '#2e312e'],
+  '--dsw-alias-border-l4': ['#eef0ee', '#262926'],
+  '--dsw-alias-bg-skeleton': ['#0000000a', '#ffffff14'],
+  '--dsw-alias-markdown-code-block': ['#f2f4f2', '#1b1e1b'],
+  '--dsw-alias-markdown-inline-code': ['#eef1ee', '#22261f'],
+  '--dsw-alias-button-primary-fill': ['#387761', '#72ccab'],
+  '--dsw-alias-button-primary-hover': ['#2f6553', '#8ad9bd'],
+  '--dsw-alias-button-ghost-active-fill': ['#e8f0ec', '#22302a'],
+  '--dsw-alias-interactive-bg-hover': ['#0000000a', '#ffffff0f'],
+  '--dsw-alias-interactive-bg-active': ['#00000014', '#ffffff1a'],
+  '--dsw-alias-state-success-secondary': ['#1f7a52', '#6ff0b4'],
+  '--dsw-alias-state-warn-secondary': ['#9a6a00', '#ffd166'],
+  '--dsw-alias-state-error-secondary': ['#a4303a', '#ff9aa2'],
+  '--dsw-alias-scrollbar-bg-l1': ['#0000000a', '#ffffff0a'],
+  '--dsw-alias-scrollbar-hover-l1': ['#0000001f', '#ffffff1f'],
+  '--dsw-alias-toast-bg': ['#101411', '#f4f7f4'],
+  '--dsw-alias-tooltip-bg': ['#101411', '#f4f7f4'],
+  '--dsw-alias-menu-surface-fill': ['#f8f9fa94', '#43454a73'],
+  '--dsw-alias-code-diff-added': ['#0f7a3d0f', '#6ff0b414'],
+  '--dsw-alias-code-diff-deleted': ['#a4303a0f', '#ff9aa214'],
+  '--dsw-alias-file-diff-added-marker': ['#01a241', '#3ddc97'],
+  '--dsw-alias-file-diff-deleted-marker': ['#d13a3a', '#ff7a7a'],
+  '--dsw-specific-menu': ['#ffffff', '#1b1e1b'],
+  '--dsw-specific-selector': ['#f2f4f2', '#242724'],
+  '--dsw-specific-input-major': ['#ffffff', '#1b1e1b'],
+  '--dsw-specific-tip': ['#f7f9f7', '#20231f'],
+}
+const base = (modeName) => {
+  const pal = palette.fullPalette({ ...spec, mode: modeName })
+  const table = { ...pal }
+  for (const [name, pair] of Object.entries(EXTRA)) table[name] = modeName === 'light' ? pair[0] : pair[1]
+  return table
+}
+const baseTokens = JSON.stringify({ light: base('light'), dark: base('dark') })
+
 const umd = (file) => readFileSync(join(root, 'node_modules', file), 'utf8')
 const bundle = readFileSync(join(root, 'lib/client.js'), 'utf8')
 
@@ -51,6 +90,7 @@ body{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);
   background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);}
 </style>
 <style>${styles.CSS}</style>
+<script>window.__BASE_TOKENS__ = ${baseTokens.replace(/</g, '\u003c')}</script>
 <div id="host">
   <p class="host-title">设置 · 通用</p>
   <p class="host-sub">这是宿主设置页的真实排布，用于检查插件行与邻居行是否同族。</p>
@@ -94,11 +134,49 @@ window.__ModuleLoader__ = { load(def) { window.__plugin = def } };
   };
   const mod = window.__plugin.factory(require);
   let row = null;
+
+  // A faithful stand-in for the shell's theme service: it keeps the built-in
+  // token tables and projects overrides onto <body> exactly like ui-layout does.
+  const BASE = window.__BASE_TOKENS__;
+  const themes = [
+    { id: 'light', colorScheme: 'light', tokens: BASE.light },
+    { id: 'dark', colorScheme: 'dark', tokens: BASE.dark },
+  ];
+  let scheme = ${JSON.stringify(mode)};
+  const layers = new Map();
+  const applied = [];
+  const project = () => {
+    for (const name of applied.splice(0)) document.body.style.removeProperty(name);
+    const merged = {};
+    for (const layer of [...layers.values()]) Object.assign(merged, layer);
+    for (const [name, pair] of Object.entries(merged)) {
+      const value = pair[scheme];
+      if (typeof value === 'string') {
+        document.body.style.setProperty(name, value);
+        applied.push(name);
+      }
+    }
+    document.body.dataset.scheme = scheme;
+    document.body.style.background = merged['--dsw-alias-bg-base']?.[scheme] || '';
+    document.body.style.color = merged['--dsw-alias-label-primary']?.[scheme] || '';
+    window.__appliedCount = Object.keys(merged).length;
+  };
+  const themeService = {
+    getTheme() {
+      return { themes, active: themes.find((entry) => entry.colorScheme === scheme) };
+    },
+    overrideTokens(source, tokens) {
+      layers.set(source, tokens);
+      project();
+      return () => { layers.delete(source); project(); };
+    },
+  };
+  window.__setScheme = (next) => { scheme = next; project(); };
   const ctx = {
     effect(fn) { const d = fn(); return d; },
     get(name) {
       if (name === 'locale') return { register() {}, bind() { return t } };
-      if (name === 'theme') return { overrideTokens() { return () => {} } };
+      if (name === 'theme') return themeService;
       if (name === 'slots') return slots;
       return undefined;
     },
@@ -114,7 +192,7 @@ window.__ModuleLoader__ = { load(def) { window.__plugin = def } };
   mod.apply(ctx);
   const mount = document.getElementById('row-mount');
   ReactDOM.createRoot(mount).render(React.createElement(row));
-  window.__harness = { mod, ctx, t };
+  window.__harness = { mod, ctx, t, themeService, get applied() { return window.__appliedCount || 0 } };
 })();
 </script>
 </html>`

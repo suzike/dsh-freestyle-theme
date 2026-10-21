@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/license-BSD--3--Clause-137b5e)](LICENSE)
 [![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.2-1f6f5c)](https://github.com/suzike/dsh-freestyle-theme)
 [![tokens](https://img.shields.io/badge/tokens-119-0ea5e9)](docs/design-system.md)
-[![tests](https://img.shields.io/badge/tests-54%20passing-4ade80)](tests)
+[![tests](https://img.shields.io/badge/tests-59%20passing-4ade80)](tests)
 [![deps](https://img.shields.io/badge/runtime%20deps-react%20only-8b5cf6)](#架构)
 
 [安装](#安装) · [能力](#能力) · [界面](#界面) · [配色模型](#配色模型) · [设计规范](docs/design-system.md) · [质量护栏](#质量护栏) · [开发](#开发)
@@ -31,7 +31,9 @@ DSH 的界面颜色来自 `--dsw-*` 令牌，壳里定义了 **403** 个；这�
 
 | | 能力 | 说明 |
 | --- | --- | --- |
-| 🎛 | 全窗口工作室 | 从设置行一键进入；`⌘K` 命令面板、`⌘Z` 50 步撤销、焦点陷阱、全键盘可达 |
+| 🎛 | 全窗口工作室 | 从设置行一键进入；portal 到 `document.body`，真正铺满窗口；`⌘K` 命令面板、`⌘Z` 50 步撤销、焦点陷阱、全键盘可达 |
+| 🖱 | 可点的预览 | 侧栏切视图、表单开关、输入框、对比分割线都能真的操作；检查模式逐元素报令牌 |
+| 🖌 | 整壳一起换色 | 119 个令牌解析成具体颜色后一次写入（120 项），宿主界面/菜单/弹窗同步变色 |
 | 🎨 | 四轴配色 | 3 条色彩通道各带色相 / 彩度 / 明度滑杆与独立锁定 |
 | 🖼 | 真实组件画布 | 对话、列表、表单三视图；侧栏、气泡、代码块、diff、菜单、toast、tooltip 全用候选令牌上色 |
 | 🔍 | 对比与检查 | 半透明分割滑块对比明暗；缩放 50–150%；Inspect 悬停即显示该元素读到的令牌 |
@@ -158,7 +160,7 @@ git clone https://github.com/suzike/dsh-freestyle-theme.git
 cd dsh-freestyle-theme
 pnpm install
 pnpm build            # lib/index.js + lib/client.js
-pnpm test             # 54 项单测
+pnpm test             # 59 项单测
 pnpm check:tokens     # 令牌 / 对比度 / 分享码闸门
 ```
 
@@ -204,7 +206,7 @@ New-Item -ItemType Junction -Path ~/.dsh/profiles/web/node_modules/dsh-freestyle
 
 ```
 src/
-├── index.ts            Host：三条路由 · 原子写 · LLM 代理
+├── index.ts            Host：四条路由 · 原子写 · LLM 代理
 ├── node.d.ts           仅声明用到的那几个 node: 成员
 └── client/
     ├── index.tsx       设置行 + 工作室挂载 + 首帧恢复
@@ -216,7 +218,7 @@ src/
     ├── styles.ts       工作室与预览的全部样式 · 动效刻度 · 明暗自适应
     ├── locale.ts       zh / en 键对齐的类型化字典
     └── services.ts     本地壳服务声明 · 存储 · fetch
-tests/                  54 项：palette / contrast / generate / preview / studio / host / traditional
+tests/                  59 项：palette / contrast / generate / preview / studio / host / traditional
 scripts/check-tokens.mjs 发布闸门：令牌存在性、对比度、分享码往返
 scripts/gen-figures.mjs  从同一份数据生成全部配图（自带越界与重叠校验）
 docs/design-system.md   设计规范：配色、动效、交互、验收

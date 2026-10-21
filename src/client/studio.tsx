@@ -23,7 +23,6 @@ import {
   encodeShare,
   exportCss,
   fullPalette,
-  generateTokens,
   HUE_STOPS,
   hueStopIndex,
   TRADITIONAL,
@@ -42,7 +41,9 @@ import {
 import { aiCandidates, localCandidates, presetCandidates, themeFromImage, type Swatch } from './generate'
 import { PreviewFrame, VisionFilters, type BlindMode, type InspectTarget, type PreviewView } from './preview'
 import { format, type Translate } from './locale'
+import { fullOverrides } from './retint'
 import {
+  API_BASE,
   fetchLibrary,
   fetchName,
   OverrideOwner,
@@ -470,7 +471,30 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
   const [appliedSpec, setAppliedSpec] = useState<ThemeSpec | null>(null)
   const [locks, setLocks] = useState<Record<ChannelKey, boolean>>({ th: false, th2: false, ths: false })
   const [inspOpen, setInspOpen] = useState(() => typeof window === 'undefined' || window.innerWidth > 1080)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const onResize = () => {
+      if (window.innerWidth <= 1080) setInspOpen(false)
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
   const [armedDelete, setArmedDelete] = useState<string | null>(null)
+  const [modelName, setModelName] = useState('')
+
+  useEffect(() => {
+    let alive = true
+    void fetch(`${API_BASE}/model`, { credentials: 'same-origin' })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body: { model?: string } | null) => {
+        if (alive && body?.model) setModelName(body.model)
+      })
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [])
 
   const rootRef = useRef<HTMLDivElement | null>(null)
   const previousFocus = useRef<Element | null>(null)
@@ -518,7 +542,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
 
   /* live preview: everything, including this studio's chrome, follows the spec */
   useEffect(() => {
-    owner.set(generateTokens(spec))
+    owner.set(fullOverrides(theme, spec))
     return () => owner.dispose()
   }, [owner, spec])
 
@@ -599,7 +623,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
   }, [name, onApplied, onClear, onClose, owner])
 
   const apply = useCallback(() => {
-    const tokens = generateTokens(spec)
+    const tokens = fullOverrides(theme, spec)
     const ok = Boolean(theme?.overrideTokens)
     writeJson(STORAGE_SPEC, spec)
     // The parent registers the applied override; this owner only paints the
@@ -637,10 +661,13 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
       createdAt: now,
       updatedAt: now,
     }
-    const next = [entry, ...library].slice(0, 60)
-    setLibrary(next)
-    writeJson(STORAGE_LIBRARY, next)
-    void saveLibrary(next).then((ok) => {
+    const stored = readJson<StoredTheme[]>(STORAGE_LIBRARY) ?? []
+    const merged = [entry, ...(library.length > 0 ? library : stored)].slice(0, 60)
+    setLibrary(merged)
+    writeJson(STORAGE_LIBRARY, merged)
+    setRailTab('library')
+    setSearch('')
+    void saveLibrary(merged).then((ok) => {
       if (!aliveRef.current) return
       setHostDown(!ok)
       flash(ok ? t('msg.saved') : t('err.noHost'), ok ? 'ok' : 'error')
@@ -917,10 +944,10 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
 
         <div className="ft-head-mid">
           <div className="ft-seg" role="group" aria-label={t('studio.light')}>
-            <button aria-pressed={spec.mode === 'light'} onClick={() => patch({ mode: 'light' })}>
+            <button aria-pressed={spec.mode === 'light'} onClick={() => commit(switchMode(spec, 'light'))}>
               <Ico name="sun" size={12} />{t('studio.light')}
             </button>
-            <button aria-pressed={spec.mode === 'dark'} onClick={() => patch({ mode: 'dark' })}>
+            <button aria-pressed={spec.mode === 'dark'} onClick={() => commit(switchMode(spec, 'dark'))}>
               <Ico name="moon" size={12} />{t('studio.dark')}
             </button>
           </div>
@@ -936,6 +963,9 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
             </button>
           </div>
           <span className="ft-divider-v" />
+          <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('rail.save')} title={t('rail.save')} onClick={saveTheme}>
+            <Ico name="save" />
+          </button>
           <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.share')} title={t('studio.share')} onClick={() => setShareOpen(true)}>
             <Ico name="share" />
           </button>
@@ -1154,7 +1184,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
                         <PreviewFrame t={t} spec={baseline} palette={baselinePalette} view={view} large blind={blind} filters={false} />
                       </div>
                       <div className="ft-cmp-b">
-                        <PreviewFrame t={t} spec={spec} palette={palette} view={view} large blind={blind} filters={false} inspect={inspect} onInspect={setHit} />
+                        <PreviewFrame t={t} spec={spec} palette={palette} view={view} large blind={blind} filters={false} inspect={inspect} onInspect={setHit} onView={setView} model={modelName} />
                       </div>
                       <span className="ft-cmp-tag" style={{ left: 10 }}>{t('canvas.before')}</span>
                       <span className="ft-cmp-tag" style={{ right: 10 }}>{name}</span>
@@ -1193,6 +1223,8 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
                       filters={false}
                       inspect={inspect}
                       onInspect={setHit}
+                      onView={setView}
+                      model={modelName}
                     />
                   </div>
                 </div>

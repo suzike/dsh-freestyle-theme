@@ -579,6 +579,7 @@ export const CSS = `
 
 .ft-card-del {
   position: absolute;
+  z-index: 3;
   top: 6px;
   right: 6px;
   display: inline-flex;
@@ -604,6 +605,8 @@ export const CSS = `
 }
 
 .ft-card-del:hover { color: var(--dsw-alias-state-error-primary); }
+.ft-card-main { position: relative; z-index: 1; }
+.ft-card-del { pointer-events: auto; }
 
 .ft-card-del[data-armed='true'] {
   color: var(--dsw-alias-state-error-primary);
@@ -2217,4 +2220,47 @@ export const CSS = `
 .ft-dialog .ft-input { height: 32px; }
 .ft-dialog .ft-textarea { min-height: 84px; padding: 8px 10px; line-height: 1.55; resize: vertical; }
 .ft-mask { background: color-mix(in oklab, var(--dsw-alias-label-primary) 38%, transparent); }
+
+/* the mock app's sidebar is real: clickable, hoverable, and it shows its state */
+.ft-pv-nav[role='button'] { cursor: pointer; transition: background var(--ft-t1) var(--ft-ease), color var(--ft-t1) var(--ft-ease); }
+.ft-pv-nav[role='button']:hover { background: color-mix(in oklab, var(--dsw-alias-brand-primary) 10%, transparent); }
+.ft-pv-nav[data-active='true'] { background: var(--dsw-specific-sidebar-nav-item-active); color: var(--dsw-alias-brand-primary); }
+.ft-pv-nav[data-active='true'] i { background: var(--dsw-alias-brand-primary); }
+.ft-pv-nav[role='button']:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary); outline-offset: 1px; }
+
+/* panels must scroll inside the studio, never push the page */
+.ft-studio { overflow: hidden; }
+.ft-body > * { min-height: 0; }
+.ft-list { display: flex; flex-direction: column; overflow: hidden; }
+.ft-list-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.ft-insp { display: flex; flex-direction: column; overflow: hidden; }
+.ft-insp-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.ft-canvas { display: flex; flex-direction: column; overflow: hidden; }
+
+/* a real, focusable composer inside the preview */
+.ft-pv-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 24px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ft-pv-text, var(--dsw-alias-label-primary));
+  font: inherit;
+  font-size: 12px;
+  padding: 0 4px;
+}
+.ft-pv-input::placeholder { color: inherit; opacity: 0.42; }
+.ft-pv-input:focus-visible { box-shadow: inset 0 0 0 2px var(--dsw-alias-brand-primary); border-radius: 6px; }
+.ft-pv-send[aria-disabled='true'] { opacity: 0.55; cursor: default; }
+
+.ft-pv-toggle {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: var(--dsw-alias-interactive-bg-hover-solid);
+  transition: background var(--ft-t1) var(--ft-ease);
+}
+.ft-pv-toggle[data-on='true'] { background: var(--dsw-alias-brand-primary); }
+.ft-pv-toggle:focus-visible { box-shadow: 0 0 0 2px var(--dsw-alias-brand-primary), 0 0 0 4px var(--dsw-alias-bg-base); }
 `

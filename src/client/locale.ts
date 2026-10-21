@@ -94,6 +94,8 @@ const zh = {
   'canvas.inspect': '检查',
   'canvas.inspectHint': '悬停画布里的元素，查看它用到的令牌',
   'canvas.composer': '给 DSH 发消息…',
+  'canvas.send': '发送（预览）',
+  'canvas.previewOnly': '预览里的输入不会真的发送',
   'canvas.blind': '色觉模拟',
   'canvas.blind.none': '正常',
   'canvas.blind.deuteranopia': '绿色弱',
@@ -101,6 +103,7 @@ const zh = {
   'canvas.blind.tritanopia': '蓝色弱',
   'canvas.blind.achromatopsia': '全色盲',
   'canvas.you': '你',
+  'canvas.model': '当前模型',
 
   // ── inspector ──────────────────────────────────────────────────────────
   'inspector.color': '颜色',
@@ -352,6 +355,8 @@ export const en: Record<DictKey, string> = {
   'canvas.inspect': 'Inspect',
   'canvas.inspectHint': 'Hover anything on the canvas to see the tokens behind it',
   'canvas.composer': 'Message DSH…',
+  'canvas.send': 'Send (preview)',
+  'canvas.previewOnly': 'Preview only — nothing is sent',
   'canvas.blind': 'Vision simulation',
   'canvas.blind.none': 'Normal',
   'canvas.blind.deuteranopia': 'Deuteranopia',
@@ -359,6 +364,7 @@ export const en: Record<DictKey, string> = {
   'canvas.blind.tritanopia': 'Tritanopia',
   'canvas.blind.achromatopsia': 'Achromatopsia',
   'canvas.you': 'you',
+  'canvas.model': 'current model',
 
   'inspector.color': 'Colour',
   'inspector.type': 'Type',

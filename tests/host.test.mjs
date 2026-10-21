@@ -1,5 +1,5 @@
 /**
- * Host half: the three routes, driven end to end against a temporary
+ * Host half: the four routes, driven end to end against a temporary
  * `DSH_HOME`. Nothing here needs DSH running — the handlers only touch
  * `webServer.register`, `ctx.get`, and the filesystem.
  */
@@ -126,7 +126,7 @@ before(async () => {
 
   const { ctx, routes } = fakeContext()
   host.apply(ctx)
-  assert.equal(routes.length, 3, 'three routes registered')
+  assert.equal(routes.length, 4, 'four routes registered')
   route = Object.fromEntries(routes.map((entry) => [entry.path, entry]))
 })
 

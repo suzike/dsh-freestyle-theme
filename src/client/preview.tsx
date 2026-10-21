@@ -10,7 +10,7 @@
  * @module dsh-freestyle-theme/client/preview
  */
 
-import type { CSSProperties, FC } from 'react'
+import { useState, type CSSProperties, type FC } from 'react'
 import { lookTokens, type Palette, type ThemeMode, type ThemeSpec } from './palette'
 import type { Translate } from './locale'
 
@@ -30,6 +30,10 @@ export interface InspectTarget {
 export interface PreviewProps {
   spec: ThemeSpec
   palette: Palette
+  /** Switch the mock app's own view when its sidebar is clicked. */
+  onView?: (view: PreviewView) => void
+  /** Model label shown in the mock title bar; the host supplies the real one. */
+  model?: string
   view: PreviewView
   /** Render at the large canvas size. */
   large?: boolean
@@ -109,6 +113,9 @@ interface HotProps {
   onInspect?: (target: InspectTarget | null) => void
   className?: string
   style?: CSSProperties
+  /** Clickable inside the mock app (nav items, toggles) when inspect is off. */
+  onActivate?: () => void
+  active?: boolean
   children: React.ReactNode
 }
 
@@ -118,10 +125,29 @@ interface HotProps {
  * In inspect mode it claims the pointer; outside it, it is inert so the
  * preview cannot steal hover from the real UI.
  */
-const Hot: FC<HotProps> = ({ tokens, label, inspect, onInspect, className, style, children }) => {
+const Hot: FC<HotProps> = ({ tokens, label, inspect, onInspect, className, style, onActivate, active, children }) => {
   if (!inspect || !onInspect) {
     return (
-      <div className={className} style={style} data-token={tokens.join(' ')}>
+      <div
+        className={className}
+        style={style}
+        data-token={tokens.join(' ')}
+        data-active={active ? 'true' : undefined}
+        role={onActivate ? 'button' : undefined}
+        tabIndex={onActivate ? 0 : undefined}
+        aria-label={onActivate ? label : undefined}
+        onClick={onActivate}
+        onKeyDown={
+          onActivate
+            ? (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  onActivate()
+                }
+              }
+            : undefined
+        }
+      >
         {children}
       </div>
     )
@@ -146,7 +172,7 @@ interface FrameProps extends PreviewProps {
 }
 
 /** The preview window: chrome, sidebar and the selected skeleton. */
-export const PreviewFrame: FC<FrameProps> = ({ spec, palette, view, large, blind, inspect, onInspect, filters, t }) => {
+export const PreviewFrame: FC<FrameProps> = ({ spec, palette, view, large, blind, inspect, onInspect, filters, onView, model, t }) => {
   const vars = { ...palette, ...lookTokens(spec) } as CSSProperties
   const mode: ThemeMode = spec.mode
 
@@ -178,7 +204,8 @@ export const PreviewFrame: FC<FrameProps> = ({ spec, palette, view, large, blind
           inspect={inspect}
           onInspect={onInspect}
           className="ft-pv-nav"
-          style={{}}
+          onActivate={() => onView?.('chat')}
+          active={view === 'chat'}
         >
           <i />
           <span>{t('canvas.chat')}</span>
@@ -189,6 +216,8 @@ export const PreviewFrame: FC<FrameProps> = ({ spec, palette, view, large, blind
           inspect={inspect}
           onInspect={onInspect}
           className="ft-pv-nav"
+          onActivate={() => onView?.('list')}
+          active={view === 'list'}
         >
           <i />
           <span>{t('canvas.list')}</span>
@@ -199,6 +228,8 @@ export const PreviewFrame: FC<FrameProps> = ({ spec, palette, view, large, blind
           inspect={inspect}
           onInspect={onInspect}
           className="ft-pv-nav"
+          onActivate={() => onView?.('form')}
+          active={view === 'form'}
         >
           <i />
           <span>{t('canvas.form')}</span>
@@ -227,7 +258,7 @@ export const PreviewFrame: FC<FrameProps> = ({ spec, palette, view, large, blind
           className="ft-pv-top"
         >
           <span>useChat 竞态修复</span>
-          <span className="ft-pv-pill">DeepSeek-V3</span>
+          <span className="ft-pv-pill">{model || t('canvas.model')}</span>
         </Hot>
 
         <div className="ft-pv-scroll">
@@ -244,10 +275,16 @@ export const PreviewFrame: FC<FrameProps> = ({ spec, palette, view, large, blind
             onInspect={onInspect}
             className="ft-pv-composer"
           >
-            <div className="ft-pv-input">
-              <span>{t('canvas.composer')}</span>
-            </div>
-            <span className="ft-pv-send">↑</span>
+            <input
+              className="ft-pv-input"
+              placeholder={t('canvas.composer')}
+              aria-label={t('canvas.composer')}
+              onFocus={(event) => event.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
+            />
+            <button type="button" className="ft-pv-send" aria-label={t('canvas.send')} title={t('canvas.previewOnly')} aria-disabled="true">
+              ↑
+            </button>
           </Hot>
         )}
       </div>
@@ -408,7 +445,10 @@ const ListBody: FC<BodyProps> = ({ t, inspect, onInspect }) => (
   </Hot>
 )
 
-const FormBody: FC<BodyProps> = ({ t, inspect, onInspect }) => (
+const FormBody: FC<BodyProps> = ({ t, inspect, onInspect }) => {
+  const [motion, setMotion] = useState(true)
+  const [pairing, setPairing] = useState(false)
+  return (
   <div className="ft-pv-form">
     <Hot
       tokens={['--dsw-alias-bg-layer-2', '--dsw-alias-border-l2', '--dsw-alias-label-secondary']}
@@ -433,7 +473,14 @@ const FormBody: FC<BodyProps> = ({ t, inspect, onInspect }) => (
         <b>{t('motion.title')}</b>
         <em>{t('motion.note')}</em>
       </span>
-      <span className="ft-pv-toggle" data-on="true" />
+      <button
+        type="button"
+        className="ft-pv-toggle"
+        data-on={motion ? 'true' : 'false'}
+        aria-pressed={motion}
+        aria-label={t('motion.title')}
+        onClick={() => setMotion((value) => !value)}
+      />
     </Hot>
 
     <Hot
@@ -447,7 +494,14 @@ const FormBody: FC<BodyProps> = ({ t, inspect, onInspect }) => (
         <b>{t('type.pair')}</b>
         <em>{t('type.note')}</em>
       </span>
-      <span className="ft-pv-toggle" data-on="false" />
+      <button
+        type="button"
+        className="ft-pv-toggle"
+        data-on={pairing ? 'true' : 'false'}
+        aria-pressed={pairing}
+        aria-label={t('type.pair')}
+        onClick={() => setPairing((value) => !value)}
+      />
     </Hot>
 
     <Hot
@@ -473,4 +527,5 @@ const FormBody: FC<BodyProps> = ({ t, inspect, onInspect }) => (
       <span>重启 DSH 后宿主界面才会使用新令牌</span>
     </Hot>
   </div>
-)
+  )
+}

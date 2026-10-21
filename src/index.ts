@@ -24,6 +24,7 @@ const API = '/api/dsh-freestyle-theme'
 const THEMES_ROUTE = `${API}/themes`
 const GENERATE_ROUTE = `${API}/generate`
 const NAME_ROUTE = `${API}/name`
+const MODEL_ROUTE = `${API}/model`
 
 /** Upper bounds: the library is a convenience, not a database. */
 const MAX_THEMES = 120
@@ -518,6 +519,26 @@ const NAME_SYSTEM = `You name UI colour themes. Reply with JSON only: {"name":"â
 The name is 2-6 words in the user's language, concrete and evocative, never "Theme 1". Tags: 3-5 short adjectives. The description is one sentence about the mood.`
 
 /** `POST /name` â€” a human name for a spec. */
+/**
+ * Report the model the conversation currently uses, so the studio's mock title
+ * bar shows the truth instead of a hardcoded product name.
+ */
+async function modelRoute(ctx: HostContext, request: IncomingRequest, response: ServerResponse): Promise<void> {
+  if (request.method !== 'GET') {
+    json(response, 405, { ok: false, code: 'method', message: 'use GET' })
+    return
+  }
+  try {
+    const picker = ctx.get('agentDefaultModel') as { currentSelection?: () => Record<string, unknown> } | undefined
+    const selection = picker?.currentSelection?.() ?? {}
+    const raw = selection.model ?? selection.modelId ?? selection.provider
+    const model = typeof raw === 'string' ? raw : ''
+    json(response, 200, { ok: true, model })
+  } catch {
+    json(response, 200, { ok: true, model: '' })
+  }
+}
+
 async function nameRoute(ctx: HostContext, request: IncomingRequest, response: ServerResponse): Promise<void> {
   if (request.method !== 'POST') {
     json(response, 405, { ok: false, code: 'method', message: 'use POST' })
@@ -586,6 +607,7 @@ export function apply(ctx: HostContext): void {
     { kind: 'exact', path: THEMES_ROUTE, handler: run(guarded(themesRoute)) },
     { kind: 'exact', path: GENERATE_ROUTE, handler: run(guarded((request, response) => generateRoute(ctx, request, response))) },
     { kind: 'exact', path: NAME_ROUTE, handler: run(guarded((request, response) => nameRoute(ctx, request, response))) },
+    { kind: 'exact', path: MODEL_ROUTE, handler: run(guarded((request, response) => modelRoute(ctx, request, response))) },
   ]
 
   const register = (): (() => void) => {
