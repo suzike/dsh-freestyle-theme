@@ -205,10 +205,22 @@ const SettingsRow: FC<RowProps> = ({ ctx, t, theme, owner }) => {
             onClear={onClear}
             onClose={() => setOpen(false)}
           />,
-          document.body,
+          portalHost(),
         )}
     </div>
   )
+}
+
+/**
+ * Where the studio mounts.
+ *
+ * A portalled node outside the host settings dialog loses every keystroke to
+ * the dialog's focus trap, so prefer the dialog element itself: it escapes the
+ * row's stacking context without leaving the modal subtree.
+ */
+function portalHost(): HTMLElement {
+  const dialog = document.querySelector<HTMLElement>('[role="dialog"][aria-modal="true"]')
+  return dialog ?? document.body
 }
 
 /** Cordis-style apply. */

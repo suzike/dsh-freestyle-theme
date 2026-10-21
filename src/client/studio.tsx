@@ -95,6 +95,7 @@ const Ico: FC<IconProps> = ({ name, size = 16 }) => {
     library: <path d="M4 5h4v14H4zM10 5h4v14h-4zM16 6l3 .8-2.2 12-3-.8z" />,
     save: <path d="M5 4h11l3 3v13H5zM8 4v6h7V4M8 15h8" />,
     trash: <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />,
+    pencil: <path d="M4 20h4l10-10-4-4L4 16v4zM14 6l4 4" />,
     sparkle: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />,
     scan: <path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4M8 12h8" />,
     eye: <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />,
@@ -360,6 +361,8 @@ interface ThemeCardProps {
   selected: boolean
   onSelect: () => void
   onDelete?: () => void
+  onRename?: () => void
+  renameLabel?: string
   armed?: boolean
   deleteLabel?: string
 }
@@ -373,7 +376,7 @@ const sameLook = (a: ThemeSpec, b: ThemeSpec): boolean => {
   )
 }
 
-const ThemeCard: FC<ThemeCardProps> = ({ t, name, subtitle, mode, light, dark, selected, armed, onSelect, onDelete, deleteLabel }) => {
+const ThemeCard: FC<ThemeCardProps> = ({ t, name, subtitle, mode, light, dark, selected, armed, onSelect, onDelete, onRename, renameLabel, deleteLabel }) => {
   const shown = mode === 'dark' ? dark : light
   // A miniature window: sidebar strip, canvas, two text lines and the accent.
   const side = shown['--dsw-alias-bg-base'] ?? '#f2f2f2'
@@ -402,6 +405,17 @@ const ThemeCard: FC<ThemeCardProps> = ({ t, name, subtitle, mode, light, dark, s
           {subtitle && <span className="ft-card-sub">{subtitle}</span>}
         </span>
       </button>
+      {onRename && (
+        <button
+          type="button"
+          className="ft-card-rename"
+          aria-label={renameLabel ?? 'rename'}
+          title={renameLabel ?? 'rename'}
+          onClick={onRename}
+        >
+          <Ico name="pencil" size={12} />
+        </button>
+      )}
       {onDelete && (
         <button
           type="button"
@@ -481,6 +495,9 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
     return () => window.removeEventListener('resize', onResize)
   }, [])
   const [armedDelete, setArmedDelete] = useState<string | null>(null)
+  const [renaming, setRenaming] = useState<StoredTheme | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const nameRef = useRef<HTMLInputElement | null>(null)
   const [modelName, setModelName] = useState('')
 
   useEffect(() => {
@@ -656,10 +673,16 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
   }, [commit, flash, spec, t])
 
   const saveTheme = useCallback(() => {
+    if (name.trim() === '') {
+      flash(t('msg.nameFirst'), 'error')
+      nameRef.current?.focus()
+      nameRef.current?.select()
+      return
+    }
     const now = Date.now()
     const entry: StoredTheme = {
       id: `t${now.toString(36)}`,
-      name: name.trim() || t('studio.name'),
+      name: name.trim(),
       spec: spec as unknown as Record<string, unknown>,
       createdAt: now,
       updatedAt: now,
@@ -676,6 +699,27 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
       flash(ok ? t('msg.saved') : t('err.noHost'), ok ? 'ok' : 'error')
     })
   }, [flash, library, name, spec, t])
+
+  const renameTheme = useCallback(() => {
+    const next = renameValue.trim()
+    if (!renaming) return
+    if (next === '') {
+      flash(t('rename.empty'), 'error')
+      return
+    }
+    const now = Date.now()
+    const merged = library.map((item) =>
+      item.id === renaming.id ? { ...item, name: next, updatedAt: now } : item,
+    )
+    setLibrary(merged)
+    writeJson(STORAGE_LIBRARY, merged)
+    if (renaming.name === name) setName(next)
+    setRenaming(null)
+    flash(t('msg.saved'), 'ok')
+    void saveLibrary(merged).then((ok) => {
+      if (aliveRef.current) setHostDown(!ok)
+    })
+  }, [flash, library, name, renameValue, renaming, saveLibrary, t])
 
   const deleteTheme = useCallback(
     (id: string) => {
@@ -941,6 +985,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
           </button>
           <div className="ft-head-title">
             <input
+              ref={nameRef}
               className="ft-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -1109,6 +1154,11 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
                     dark={fullPalette(switchModeSafe(entrySpec, 'dark'))}
                     selected={sameLook(spec, switchModeSafe(entrySpec, spec.mode))}
                     onSelect={() => commit(entrySpec)}
+                    onRename={() => {
+                      setRenameValue(entry.name)
+                      setRenaming(entry)
+                    }}
+                    renameLabel={t('rail.rename')}
                     armed={armedDelete === entry.id}
                     onDelete={() => {
                       if (armedDelete !== entry.id) {
@@ -1588,6 +1638,58 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
             <div className="ft-dialog-foot">
               <button className="ft-btn ft-btn-ghost" onClick={() => setGenCandidates(presetCandidates(4))}>{t('row.shuffle')}</button>
               <button className="ft-btn ft-btn-ghost" onClick={() => setGenOpen(false)}>{t('share.done')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* rename dialog */}
+      {renaming && (
+        <div className="ft-mask" onClick={() => setRenaming(null)}>
+          <div
+            className="ft-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('rename.title')}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="ft-dialog-head">
+              <Ico name="pencil" size={14} />
+              <h2>{t('rename.title')}</h2>
+              <span className="ft-spacer" />
+              <button
+                className="ft-btn ft-btn-icon ft-btn-ghost"
+                aria-label={t('share.done')}
+                onClick={() => setRenaming(null)}
+              >
+                <Ico name="close" size={14} />
+              </button>
+            </div>
+            <div className="ft-dialog-body">
+              <label className="ft-dialog-label" htmlFor="ft-rename">{t('rename.name')}</label>
+              <input
+                id="ft-rename"
+                className="ft-input"
+                autoFocus
+                value={renameValue}
+                maxLength={48}
+                onChange={(event) => setRenameValue(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    renameTheme()
+                  }
+                }}
+              />
+              <p className="ft-dialog-note">{t('rename.hint')}</p>
+            </div>
+            <div className="ft-dialog-foot">
+              <button className="ft-btn ft-btn-ghost" onClick={() => setRenaming(null)}>
+                {t('share.done')}
+              </button>
+              <button className="ft-btn ft-btn-primary" onClick={renameTheme}>
+                {t('rename.save')}
+              </button>
             </div>
           </div>
         </div>

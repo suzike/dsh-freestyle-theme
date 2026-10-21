@@ -2263,4 +2263,25 @@ export const CSS = `
 }
 .ft-pv-toggle[data-on='true'] { background: var(--dsw-alias-brand-primary); }
 .ft-pv-toggle:focus-visible { box-shadow: 0 0 0 2px var(--dsw-alias-brand-primary), 0 0 0 4px var(--dsw-alias-bg-base); }
+
+/* rename button sits beside the delete control, same reveal rule */
+.ft-card-rename,
+.ft-card-del { opacity: 0; pointer-events: none; }
+.ft-card:hover .ft-card-rename,
+.ft-card:hover .ft-card-del,
+.ft-card:focus-within .ft-card-rename,
+.ft-card:focus-within .ft-card-del { opacity: 1; pointer-events: auto; }
+.ft-card-rename {
+  position: absolute; top: 6px; right: 32px; z-index: 3;
+  display: grid; place-items: center;
+  width: 24px; height: 24px; padding: 0;
+  border: 0; border-radius: 7px; background: transparent;
+  color: var(--dsw-alias-label-tertiary); cursor: pointer;
+  transition: background var(--ft-dur-1) var(--ft-ease), color var(--ft-dur-1) var(--ft-ease);
+}
+.ft-card-rename:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); }
+.ft-dialog-note { margin: 8px 0 0; font-size: 11px; color: var(--dsw-alias-label-tertiary); }
+@media (hover: none) {
+  .ft-card-rename, .ft-card-del { opacity: 1; pointer-events: auto; }
+}
 `
