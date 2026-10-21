@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.3
+
+修「装上这一版以后 DSH 起不来」——根因是 0.6.x 的客户端入口在宿主服务还没就绪时读服务，cordis 4 直接抛错，整个 web boot 被这个插件拖挂；顺带修掉设置行在实机上根本没注册上的问题。
+
+### 修复
+- **启动失败（阻断级）**：`apply()` 里不再裸读 `ctx.theme` / `ctx.locale`，改成 `ctx.inject(['theme','locale'], …)`，并给 `service()` 的属性式兜底加了 try/catch；`apply()` 整体包一层 try/catch 且只 `console.warn`，插件再坏也不会带走宿主。此前 `Error: cannot get property "locale" without inject` 会让 `dsh-freestyle-theme` 这条 entry 激活失败。
+- **设置行不出现**：`slots.inject('settings.general.item', …)` 必须在插件自己的 apply 作用域里调用；放在 `ctx.inject` 的嵌套作用域里注册会静默不生效。现在注册在 apply 作用域，主题/语言改为渲染时按需取。
+- **`ctx.effect(cb)` 用法是反的**：它立刻执行 `cb` 并把返回值当 disposer，原先 `ctx.effect(() => dispose)` 在注册前就把行销毁了。改为监听 `dispose` 事件。
+- 去掉调试用的 `window.__fstDebug` 埋点。
+
+### 验证
+- 实机：`rev` 重载后 `dsh-freestyle-theme` 激活、无 “did not activate” 提示；设置 → 通用设置 出现「FreeStyle 主题」行，工作室可打开、预设/模式/中国传统色面板可点。
+- `npx tsc --noEmit` 通过；`node --test "tests/*.test.mjs"` 59/59；`check:tokens` 119 令牌齐全。
+
 ## 0.6.2
 
 ### 修复

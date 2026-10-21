@@ -53,33 +53,40 @@ function ensureStyles(): () => void {
 }
 
 /**
- * Build a translator. `locale.register(ns, dicts)` is the documented shape;
- * older harnesses take `(ns, locale, dict)`, so both are attempted and a bare
- * dictionary fallback keeps the panel readable if neither exists.
+ * Build a translator.
+ *
+ * The `locale` service is optional: when the host exposes it we bind its
+ * bundle, otherwise the shipped dictionary renders the row. `bind` is called
+ * later, from inside `ctx.inject`, because a plugin may not read a service it
+ * has not declared.
  */
-function makeTranslator(ctx: PluginContext): Translate {
-  const locale = service<LocaleService>(ctx, 'locale')
+function createTranslator(): { t: Translate; bind: (locale: LocaleService | undefined) => void } {
   const preferZh = (navigator.language || 'zh').toLowerCase().startsWith('zh')
   let bound: (key: string, vars?: Record<string, string | number>) => string = (key) => key
 
-  try {
-    locale?.register?.(name, DICTIONARIES)
-  } catch {
-    /* registration is best-effort */
-  }
-  try {
-    const candidate = locale?.bind?.(name)
-    if (typeof candidate === 'function') bound = candidate as typeof bound
-  } catch {
-    /* fall through to the local dictionary */
-  }
-
-  return (key, vars) => {
+  const t: Translate = (key, vars) => {
     const raw = bound(key, vars) ?? key
     if (raw !== key) return format(raw, vars)
     const dictionary = preferZh ? DICTIONARIES.zh : DICTIONARIES.en
     return format(dictionary[key] ?? DICTIONARIES.zh[key] ?? key, vars)
   }
+
+  const bind = (locale: LocaleService | undefined): void => {
+    if (!locale) return
+    try {
+      locale.register?.(name, DICTIONARIES)
+    } catch {
+      /* registration is best-effort */
+    }
+    try {
+      const candidate = locale.bind?.(name)
+      if (typeof candidate === 'function') bound = candidate as typeof bound
+    } catch {
+      /* fall through to the local dictionary */
+    }
+  }
+
+  return { t, bind }
 }
 
 interface RowProps {
@@ -223,32 +230,132 @@ function portalHost(): HTMLElement {
   return dialog ?? document.body
 }
 
-/** Cordis-style apply. */
-export function apply(ctx: PluginContext): void {
-  const t = makeTranslator(ctx)
-  const theme = service<ThemeService>(ctx, 'theme')
-  const owner = new OverrideOwner(theme, 'dsh-freestyle-theme')
+const SLOT_NAME = 'settings.general.item'
+/** Bounded retries while the settings slot factory declares itself. */
+const MAX_ROW_ATTEMPTS = 40
+const ROW_RETRY_MS = 250
 
-  // Restore the last applied theme before the first paint, not when the
-  // settings page happens to mount.
-  const stored = readJson<Record<string, unknown>>(STORAGE_SPEC)
-  if (stored) owner.set(fullOverrides(theme, normalizeSpec(stored)))
+/** Report a non-fatal failure without ever breaking the host's boot. */
+function reportFailure(stage: string, error: unknown): void {
+  try {
+    console.warn(`[dsh-freestyle-theme] ${stage} failed; the row degrades, the shell keeps booting`, error)
+  } catch {
+    /* console is best-effort */
+  }
+}
 
+/**
+ * Declare the settings row.
+ *
+ * `slots.inject` throws while a slot factory is still unregistered, which is
+ * normal for a plugin loaded with `immediately: true` — the settings UI has
+ * not declared `settings.general.item` on the first tick. Retrying a bounded
+ * number of times turns that race into a slightly late row instead of a
+ * failed entry that aborts the entire web boot.
+ */
+function mountSettingsRow(slots: SlotsService, render: () => unknown): void {
+  const register = slots.register?.bind(slots)
+  const inject = slots.inject?.bind(slots)
+  if (!register || !inject) return
+
+  let attempts = 0
+  const attempt = (): void => {
+    try {
+      inject(SLOT_NAME, () => {
+        try {
+          register({ name: SLOT_NAME, id: ROW_ID, order: 60 }, render)
+        } catch (error) {
+          reportFailure('slot register', error)
+        }
+      })
+    } catch (error) {
+      attempts += 1
+      if (attempts < MAX_ROW_ATTEMPTS) {
+        setTimeout(attempt, ROW_RETRY_MS)
+        return
+      }
+      reportFailure('slot inject', error)
+    }
+  }
+
+  attempt()
+}
+
+/** Inject the studio stylesheet and wire disposal. */
+function attachStyles(ctx: PluginContext, owner: OverrideOwner): void {
   if (typeof ctx.effect === 'function') {
     ctx.effect(() => ensureStyles(), 'dsh-freestyle-theme: styles')
     ctx.effect(() => () => owner.dispose(), 'dsh-freestyle-theme: overrides')
   } else {
     ensureStyles()
   }
+}
 
-  const slots = service<SlotsService>(ctx, 'slots')
-  if (!slots?.inject || !slots.register) return
-  const register = slots.register.bind(slots)
+/** Re-apply the persisted spec against a now-available theme service. */
+function restoreTheme(theme: ThemeService | undefined, owner: OverrideOwner): void {
+  const stored = readJson<Record<string, unknown>>(STORAGE_SPEC)
+  if (!stored) return
+  try {
+    owner.set(fullOverrides(theme, normalizeSpec(stored)))
+  } catch (error) {
+    reportFailure('theme restore', error)
+  }
+}
 
-  slots.inject('settings.general.item', () => {
-    register(
-      { name: 'settings.general.item', id: ROW_ID, order: 60 },
-      () => <SettingsRow ctx={ctx} t={t} theme={theme} owner={owner} />,
-    )
-  })
+/**
+ * Cordis-style apply.
+ *
+ * Only `slots` is a hard dependency. `theme` and `locale` are consumed through
+ * `ctx.inject`, so this entry activates even before either service exists —
+ * reading an undeclared service throws in cordis 4 and used to abort the whole
+ * web boot.
+ */
+export function apply(ctx: PluginContext): void {
+  try {
+    const { t, bind } = createTranslator()
+    const owner = new OverrideOwner(undefined, 'dsh-freestyle-theme')
+    attachStyles(ctx, owner)
+
+    const slots = service<SlotsService>(ctx, 'slots')
+    // Register the settings row right here: the slot ledger is claimed later by
+    // `ui-settings-general`, so `slots.inject` must be called from the plugin's
+    // own apply scope. Registering from inside a service-injected child scope
+    // silently never fires.
+    const readTheme = (): ThemeService | undefined => {
+      try {
+        return (ctx as any).get?.('theme') as ThemeService | undefined
+      } catch {
+        return undefined
+      }
+    }
+    const mount = (): void => {
+      if (!slots) return
+      mountSettingsRow(slots, () => <SettingsRow ctx={ctx} t={t} theme={readTheme()} owner={owner} />)
+    }
+    // The row must register from apply's own scope; see mountSettingsRow().
+    mount()
+
+    const inject = (ctx as { inject?: (names: string[], cb: (scope: Record<string, unknown>) => void) => unknown }).inject
+    if (typeof inject === 'function') {
+      inject.call(ctx, ['theme', 'locale'], (scope) => {
+        try {
+          const theme = scope.theme as ThemeService | undefined
+          bind(scope.locale as LocaleService | undefined)
+          owner.attach(theme)
+          restoreTheme(theme, owner)
+        } catch (error) {
+          reportFailure('service binding', error)
+        }
+      })
+    } else {
+      // Older harnesses allow direct reads; keep the plugin usable there.
+      const theme = service<ThemeService>(ctx, 'theme')
+      bind(service<LocaleService>(ctx, 'locale'))
+      owner.attach(theme)
+      restoreTheme(theme, owner)
+    }
+  } catch (error) {
+    // A UI plugin must never abort the host's boot.
+    reportFailure('apply', error)
+  }
 }

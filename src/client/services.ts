@@ -72,8 +72,13 @@ export interface PluginContext {
 export function service<T>(ctx: PluginContext, name: string): T | undefined {
   const viaGet = typeof ctx.get === 'function' ? (ctx.get(name) as T | undefined) : undefined
   if (viaGet) return viaGet
-  const direct = ctx[name] as T | undefined
-  return direct ?? undefined
+  // Cordis 4 throws when an undeclared service is read as a property, so the
+  // fallback must be defensive: a missing service degrades, never crashes.
+  try {
+    return (ctx[name] as T | undefined) ?? undefined
+  } catch {
+    return undefined
+  }
 }
 
 /** Token override bookkeeping: one live source per feature area. */
@@ -81,12 +86,22 @@ export class OverrideOwner {
   private applied: TokenOverrides | null = null
   private disposers: Disposable[] = []
 
-  private readonly theme: ThemeService | undefined
+  private theme: ThemeService | undefined
   private readonly source: string
 
   constructor(theme: ThemeService | undefined, source: string) {
     this.theme = theme
     this.source = source
+  }
+
+  /**
+   * Attach the theme service once `ctx.inject` provides it, replaying any
+   * overrides that were already computed.
+   */
+  attach(theme: ThemeService | undefined): void {
+    if (!theme) return
+    this.theme = theme
+    if (this.applied) this.set(this.applied)
   }
 
   /** Apply (or clear, with `null`) this owner's overrides. */
