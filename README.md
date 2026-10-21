@@ -12,7 +12,7 @@
 [![tests](https://img.shields.io/badge/tests-59%20passing-4ade80)](tests)
 [![deps](https://img.shields.io/badge/runtime%20deps-react%20only-8b5cf6)](#架构)
 
-[安装](#安装) · [能力](#能力) · [界面](#界面) · [配色模型](#配色模型) · [设计规范](docs/design-system.md) · [质量护栏](#质量护栏) · [开发](#开发)
+[安装](#安装) · [能力](#能力) · [界面](#界面) · [配色模型](#配色模型) · [设计规范](docs/design-system.md) · [踩坑台账](docs/pitfalls.md) · [质量护栏](#质量护栏) · [开发](#开发)
 
 </div>
 
@@ -222,6 +222,7 @@ tests/                  59 项：palette / contrast / generate / preview / studi
 scripts/check-tokens.mjs 发布闸门：令牌存在性、对比度、分享码往返
 scripts/gen-figures.mjs  从同一份数据生成全部配图（自带越界与重叠校验）
 docs/design-system.md   设计规范：配色、动效、交互、验收
+docs/pitfalls.md        踩坑台账：cordis 4 三个致命坑、桌面壳 40px、样式重复定义、离线验证
 ```
 
 ## 质量护栏
