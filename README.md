@@ -260,7 +260,7 @@ node scripts/gen-figures.mjs   # 重新生成 docs/images/*.svg
 - **浏览器内验证靠 harness**：`scripts/harness.mjs` 在真实浏览器里跑真实 `lib/client.js`；交互（拖拽、滤镜）仍建议装好后手动过一遍。
 - **LLM 功能可降级**：没有可用模型时，命名改用「色名 · 度数」，生成改用本地词表。
 - **应用后面板会收起**：点「应用到 DSH」会在 220ms 后关掉工作室，避免全窗浮层挡住设置页；想继续调，重开即可，配色已保存。
-- **窗口控制条只测了 Windows**：桌面端顶上约 40px 是 Electron 的窗口按钮条（`titleBarOverlay`，由系统画在页面内容之上），工作室会把这条让出来当标题栏：靠 `env(titlebar-area-height)` 与 preload 写的 `html[data-platform]` 判定，浏览器里两者都没有，界面保持贴边。macOS 未实机验证。
+- **窗口控制条只测了 Windows**：桌面端顶上约 40px 是 Electron 的窗口按钮条（`titleBarOverlay`，系统画在页面内容之上，且自带不透明填充与宿主标题栏文字）。工作室不去占这条，而是整体下移到它下方——覆盖只会撞字、撞色。判定靠 `env(titlebar-area-height)` 与 preload 写的 `html[data-platform]`，浏览器里两者都没有，界面保持整窗贴边。macOS 未实机验证。
 
 ## License
 
