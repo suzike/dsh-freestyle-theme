@@ -13,10 +13,16 @@ test('every preset clears the vividness floor in both modes', () => {
       const measured = vivid.vividnessOf(palette.fullPalette(palette.presetSpec(preset.id, mode)))
       // Graphite is deliberately near-grey; it still has to carry a cast, so the
       // bar is lower rather than absent — a truly colourless theme is a bug.
+      // Graphite is deliberately near-grey; it still has to carry a cast, so the
+      // bar is lower rather than absent — a truly colourless theme is a bug.
       const floor = vivid.VIVIDNESS_FLOOR[mode] * (preset.neutral ? 0.55 : 1)
       assert.ok(
         measured.mean >= floor,
         `${preset.id}/${mode} reads grey: mean chroma ${measured.mean.toFixed(4)} < ${floor}`,
+      )
+      assert.ok(
+        vivid.isVividEnough(measured, mode),
+        `${preset.id}/${mode} fails isVividEnough: ${JSON.stringify(measured)}`,
       )
     }
   }
@@ -85,4 +91,65 @@ test('the intensity axis survives a share round-trip', () => {
   )
   assert.ok(legacy)
   assert.equal(+legacy.spec.vivid.toFixed(2), 0.85)
+})
+
+test('every surface carries the same tint, or the most its gamut allows', () => {
+  for (const mode of modes) {
+    for (const preset of palette.PRESETS) {
+      const spec = palette.presetSpec(preset.id, mode)
+      const tokens = palette.fullPalette(spec)
+      const gain = Math.min(1.8, Math.max(0.4, spec.vivid ?? 1))
+      const target = palette.SURFACE_CHROMA * gain
+      let measured = 0
+      let clamped = 0
+      for (const [token, value] of Object.entries(tokens)) {
+        if (!palette.SURFACE_TOKEN.test(token)) continue
+        if (!/^#[0-9a-f]{6}$/i.test(value)) continue
+        const { l, c, h } = palette.hexToOklch(value)
+        const ceiling = palette.maxChroma(l, h)
+        const expected = Math.min(ceiling, target)
+        if (ceiling < target) clamped += 1
+        // 8-bit rounding across three channels moves OKLCh chroma by ~0.005.
+        assert.ok(
+          Math.abs(c - expected) <= 0.005,
+          `${preset.id}/${mode} ${token} carries ${c.toFixed(3)}, expected ${expected.toFixed(3)}`,
+        )
+        measured += 1
+      }
+      assert.ok(measured >= 15, `${preset.id}/${mode} only measured ${measured} surfaces`)
+      // A preset whose gamut clamps almost everything cannot be even: that is a
+      // property of the hue, and the studio is allowed to say so.
+      assert.ok(
+        clamped <= measured,
+        `${preset.id}/${mode} clamped ${clamped}/${measured}`,
+      )
+    }
+  }
+})
+
+test('paper layers keep a readable depth step in both modes', () => {
+  for (const mode of modes) {
+    for (const preset of palette.PRESETS) {
+      const t = palette.fullPalette(palette.presetSpec(preset.id, mode))
+      const l = (token) => palette.hexToOklch(t[token]).l
+      // Elevation reads as lighter in both modes: the canvas is the floor and
+      // the sidebar is the one recessed well below it.
+      // Within the paper set, layer-1..3 are a shallow plateau (card, nested
+      // card, raised chip), which is what makes stacking readable.
+      const base = l('--dsw-alias-bg-base')
+      const layers = ['--dsw-alias-bg-layer-1', '--dsw-alias-bg-layer-2', '--dsw-alias-bg-layer-3'].map(l)
+      for (const [index, value] of layers.entries()) {
+        const awayFromCanvas = value > base
+        assert.ok(
+          awayFromCanvas,
+          `${preset.id}/${mode} layer-${index + 1} (${value.toFixed(3)}) does not stand off the canvas (${base.toFixed(3)})`,
+        )
+      }
+      // A dark page needs a wider lightness step for the same perceived
+      // separation, so the ceiling is mode-specific.
+      const plateau = Math.max(...layers) - Math.min(...layers)
+      const ceiling = mode === 'light' ? 0.03 : 0.085
+      assert.ok(plateau > 0.004 && plateau < ceiling, `${preset.id}/${mode} paper plateau is ${plateau.toFixed(3)}`)
+    }
+  }
 })

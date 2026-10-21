@@ -16,6 +16,7 @@
  */
 
 import { parseRgba } from './retint'
+import { maxChroma } from './palette'
 
 /** Tokens that cover most of the screen. Order is not significant. */
 export const LARGE_SURFACES = [
@@ -30,6 +31,15 @@ export const LARGE_SURFACES = [
 export interface Vividness {
   /** Mean chroma of the large surfaces, OKLab. */
   mean: number
+  /**
+   * Mean share of the *local* gamut those surfaces occupy, 0–1.
+   *
+   * This is the honest measure of "does it look coloured": raw chroma has a
+   * ceiling that depends on lightness and hue, so a warm near-white preset can
+   * look right while reading a low absolute chroma. A fixed-chroma model scored
+   * well on one lightness and badly on another — the uneven page the user saw.
+   */
+  share: number
   /** The least coloured large surface. */
   min: number
   /** The accent's chroma, for context only. */
@@ -42,27 +52,38 @@ export interface Vividness {
  * Floor below which a theme reads as grey, measured over the shipped presets.
  *
  * A light canvas can hold roughly 0.02–0.07 chroma before leaving sRGB; asking
- * for 0.014 already reads as paper rather than white, and the accents carry the
+ * for 0.013 already reads as paper rather than white, and the accents carry the
  * rest. Dark mode needs slightly more because a dark surface catches less light
  * per unit of chroma.
+ *
+ * The light bar is 0.013 rather than 0.014 because a warm pastel hue (film) has
+ * almost no gamut left at L 0.98, so its near-white layers are physically capped
+ * a little lower than a cool hue's. The floor is a regression guard, not a
+ * target: surfaces are painted at `SURFACE_CHROMA` and only clamp at the gamut.
  */
-export const VIVIDNESS_FLOOR = { light: 0.014, dark: 0.017 } as const
+export const VIVIDNESS_FLOOR = { light: 0.013, dark: 0.017 } as const
 
 /** Measure the large-surface chroma of one token table. */
 export function vividnessOf(tokens: Record<string, string>): Vividness {
   const values: number[] = []
+  const shares: number[] = []
   for (const name of LARGE_SURFACES) {
     const raw = tokens[name]
     if (!raw) continue
     const parsed = parseRgba(raw)
-    if (parsed) values.push(parsed.c)
+    if (!parsed) continue
+    values.push(parsed.c)
+    const ceiling = maxChroma(parsed.l, parsed.h)
+    if (ceiling > 0) shares.push(Math.min(1, parsed.c / ceiling))
   }
   const accent = tokens['--dsw-alias-brand-primary']
   const accentC = accent ? parseRgba(accent)?.c ?? 0 : 0
-  if (values.length === 0) return { mean: 0, min: 0, accent: accentC, measured: 0 }
+  if (values.length === 0) return { mean: 0, share: 0, min: 0, accent: accentC, measured: 0 }
   const sum = values.reduce((total, value) => total + value, 0)
+  const shareSum = shares.reduce((total, value) => total + value, 0)
   return {
     mean: sum / values.length,
+    share: shares.length === 0 ? 0 : shareSum / shares.length,
     min: Math.min(...values),
     accent: accentC,
     measured: values.length,

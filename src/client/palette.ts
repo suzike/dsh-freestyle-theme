@@ -231,6 +231,60 @@ export function huesForHarmony(primary: number, harmony: HarmonyKey): { th2: num
   return { th2: (hue + offset2) % 360, ths: (hue + offsetS + 360) % 360 }
 }
 
+/* ── tint evenness ───────────────────────────────────────────────────────────
+ * Every surface is tinted to the same *share of what sRGB can hold at its own
+ * lightness*. Using a fixed chroma instead (the previous model) made a white
+ * card sit at ~95% of its gamut while a 0.92 overlay sat at ~40% — the page
+ * then read as "some parts coloured, some parts grey".
+ */
+
+/** Largest chroma sRGB can represent at this lightness and hue. */
+export function maxChroma(l: number, h: number): number {
+  if (inGamut(l, 0.45, h)) return 0.45
+  let low = 0
+  let high = 0.45
+  for (let step = 0; step < 16; step += 1) {
+    const mid = (low + high) / 2
+    if (inGamut(l, mid, h)) low = mid
+    else high = mid
+  }
+  return low
+}
+
+/**
+ * Chroma every surface is painted at, before the gamut says no.
+ *
+ * Constant *share* of the local gamut was the previous attempt and it still
+ * looked uneven: 44% of a wide gamut (a 0.96 canvas) is a visible tint, while
+ * 44% of a nearly nonexistent one (a 0.99 card) is invisible. Perceived colour
+ * follows absolute OKLCh chroma, so surfaces share one target and only give way
+ * where sRGB physically cannot hold it (near-white cards).
+ */
+export const SURFACE_CHROMA = 0.026
+
+/** Tokens that are surfaces (paper, cards, floating layers) rather than ink. */
+export const SURFACE_TOKEN =
+  /^--(?:dsw-alias-(?:bg-(?:base|layer-[123]|overlay|module-platform|multi-select|document-preview)|button-(?:elevated-fill|floating-fill|floating-hover|ghost-active-fill|ghost-active-hover|primary-dimmed)|interactive-bg-hover-solid|markdown-(?:code-block|code-block-banner|code-segment-selected|code-segment-unselected|inline-code|placeholder|tag|citation)|menu-group-header-fill|onboarding-(?:card|secondary)-fill|settings-card-fill|turn-trigger-bg(?:-hover)?)|dsw-specific-(?:sidebar-fill|input-major|login-input|menu|selector|tip)|dsw-menu-surface-fill)$/
+
+/** Re-tint every surface to one share of its own gamut, keeping L and hue. */
+function evenSurfaces(tokens: Record<string, string>, gain: number): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [token, value] of Object.entries(tokens)) {
+    if (typeof value !== 'string' || !SURFACE_TOKEN.test(token)) {
+      out[token] = value
+      continue
+    }
+    const parsed = /^#([0-9a-f]{6})$/i.exec(value)
+    if (!parsed) {
+      out[token] = value
+      continue
+    }
+    const { l, h } = hexToOklch(value)
+    out[token] = oklchToHex(l, Math.min(maxChroma(l, h), SURFACE_CHROMA * gain), h)
+  }
+  return out
+}
+
 /**
  * Expand one spec into every themeable token for its mode.
  *
@@ -291,7 +345,11 @@ export function fullPalette(spec: ThemeSpec): Palette {
   const sBase = bgEff
   // Light mode: cards stay pure white and elevation spreads downward from
   // there, so layer-2/3 differ by a hair instead of collapsing into one tone.
-  const sL1 = light ? Math.min(bgEff + 0.032 * k, 0.998) : clamp(bgEff + 0.035 * k, 0.02, 0.6)
+  // In light mode a card sits 0.018 above the canvas, not 0.03: sRGB has almost
+  // no chroma room at L 0.99, so a brighter card cannot carry the same tint as
+  // the canvas and the page reads as a patchwork. Trading 0.01 of elevation for
+  // a card that takes colour is what makes the tint look like one material.
+  const sL1 = light ? Math.min(bgEff + 0.018 * k, 0.998) : clamp(bgEff + 0.035 * k, 0.02, 0.6)
   const sL2 = light ? Math.max(0.02, sL1 - 0.006 * k) : clamp(bgEff + 0.06 * k, 0.02, 0.65)
   const sL3 = light ? Math.max(0.02, sL1 - 0.012 * k) : clamp(bgEff + 0.085 * k, 0.02, 0.7)
   const sOverlay = light
@@ -323,7 +381,7 @@ export function fullPalette(spec: ThemeSpec): Palette {
   const markdownBlock = hex(sCode, surf(0.3), ths)
   const tooltipBg = hex(light ? 0.18 : 0.32, surf(0.3), ths)
 
-  return {
+  const tokens: Record<string, string> = {
     // ── surfaces ────────────────────────────────────────────────────────────
     '--dsw-alias-bg-base': hex(sBase, surf(0.3), ths),
     '--dsw-alias-bg-layer-1': hex(sL1, surf(0.2), ths),
@@ -488,6 +546,7 @@ export function fullPalette(spec: ThemeSpec): Palette {
     ),
     '--dsw-specific-tip': hex(light ? 0.93 : 0.22, surf(0.4), ths),
   }
+  return evenSurfaces(tokens, vivid)
 }
 
 /** Zip the light and dark palettes into the theme service's override shape. */
