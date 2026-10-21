@@ -1,6 +1,6 @@
 {
   "name": "dsh-freestyle-theme",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "description": "FreeStyle 主题：全窗口主题工作室，实时设计、对比预览、色觉模拟、无障碍体检、12 套坐标预设、主题库、图片/一句话生成与分享码，覆盖全部 119 个 --dsw- 令牌并自适应明暗。",
   "type": "module",
   "packageManager": "pnpm@11.7.0",

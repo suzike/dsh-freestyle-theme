@@ -1332,21 +1332,42 @@ export const CSS = `
 
 .ft-pv-toggle {
   position: relative;
-  width: 30px;
-  height: 18px;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 20px;
   border-radius: 999px;
-  background: var(--dsw-alias-brand-primary);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: var(--dsw-alias-interactive-bg-hover-solid);
+  box-shadow: inset 0 0 0 1px var(--dsw-alias-border-l1);
+  transition: background var(--ft-t2, 220ms) var(--ft-ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
+    box-shadow var(--ft-t2, 220ms) var(--ft-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
 }
 
 .ft-pv-toggle::after {
   content: '';
   position: absolute;
   top: 2px;
-  right: 2px;
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
   background: var(--dsw-alias-switch-thumb);
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--dsw-alias-label-primary) 22%, transparent);
+  transition: transform var(--ft-t2, 220ms) var(--ft-ease, cubic-bezier(0.22, 0.61, 0.36, 1));
+}
+
+.ft-pv-toggle[data-on='true'] {
+  background: var(--dsw-alias-brand-primary);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--dsw-alias-brand-primary) 60%, transparent);
+}
+
+.ft-pv-toggle[data-on='true']::after { transform: translateX(14px); }
+
+.ft-pv-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--dsw-alias-brand-primary), 0 0 0 4px var(--dsw-alias-bg-base);
 }
 
 .ft-pv-check { display: flex; align-items: center; gap: 7px; font-size: 10.5px; color: var(--dsw-alias-label-secondary); }
@@ -2115,13 +2136,12 @@ export const CSS = `
 }
 .ft-pv-status span { flex: 1 1 auto; font: 400 11px/1.35 inherit; }
 .ft-pv-status em { font: 400 9.5px/1 inherit; font-style: normal; color: var(--dsw-alias-label-tertiary); }
+.ft-pv-status em + em::before,
+.ft-pv-status em::before { content: '·'; margin: 0 6px 0 0; opacity: 0.55; }
 .ft-pv-status-ok { background: var(--dsw-alias-state-success-tertiary); border-color: transparent; }
 .ft-pv-status-ok i { background: var(--dsw-alias-state-success-primary); color: var(--dsw-alias-label-primary-foreground); }
 .ft-pv-status-warn { background: var(--dsw-alias-state-warn-tertiary); border-color: transparent; }
 .ft-pv-status-warn i { background: var(--dsw-alias-state-warn-primary); color: var(--dsw-alias-label-primary-foreground); }
-.ft-pv-toggle[data-on='true'] { background: var(--dsw-alias-brand-primary); }
-.ft-pv-toggle::after { background: var(--dsw-alias-switch-thumb); }
-.ft-pv-toggle[data-on='true']::after { transform: translateX(11px); }
 
 /* traditional colour list: a swatch row, no card chrome */
 .ft-list-note {
@@ -2253,16 +2273,6 @@ export const CSS = `
 .ft-pv-input::placeholder { color: inherit; opacity: 0.42; }
 .ft-pv-input:focus-visible { box-shadow: inset 0 0 0 2px var(--dsw-alias-brand-primary); border-radius: 6px; }
 .ft-pv-send[aria-disabled='true'] { opacity: 0.55; cursor: default; }
-
-.ft-pv-toggle {
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  background: var(--dsw-alias-interactive-bg-hover-solid);
-  transition: background var(--ft-t1) var(--ft-ease);
-}
-.ft-pv-toggle[data-on='true'] { background: var(--dsw-alias-brand-primary); }
-.ft-pv-toggle:focus-visible { box-shadow: 0 0 0 2px var(--dsw-alias-brand-primary), 0 0 0 4px var(--dsw-alias-bg-base); }
 
 /* rename button sits beside the delete control, same reveal rule */
 .ft-card-rename,
