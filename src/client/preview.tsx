@@ -304,14 +304,21 @@ const ChatBody: FC<BodyProps> = ({ t, inspect, onInspect }) => (
             <span>useChat.ts</span>
             <span style={{ marginLeft: 'auto' }}>TS</span>
           </div>
-          <pre>
-            <span className="ft-pv-k">const</span> ctrl = <span className="ft-pv-k">new</span>{' '}
-            <span>AbortController</span>(){'\n'}
-            <span className="ft-pv-k">void</span> stream(url, {'{ signal: ctrl.signal }'}
-            ){'\n'}
-            <span className="ft-pv-k">return</span> () =&gt; ctrl.abort(){' '}
-            <span className="ft-pv-c">// 卸载即取消</span>
-          </pre>
+          <div className="ft-pv-code-lines">
+            <div>
+              <span className="ft-pv-k">const</span> ctrl = <span className="ft-pv-k">new</span>{' '}
+              <span>AbortController</span>()
+            </div>
+            <div>
+              <span className="ft-pv-k">void</span> stream(url, {'{ signal: ctrl.signal }'})
+            </div>
+            <div>
+              <span className="ft-pv-k">return</span> () =&gt; ctrl.abort()
+            </div>
+            <div>
+              <span className="ft-pv-c">// 卸载即取消</span>
+            </div>
+          </div>
         </Hot>
 
         <Hot
@@ -339,11 +346,15 @@ const ChatBody: FC<BodyProps> = ({ t, inspect, onInspect }) => (
           </div>
           <div className="add">
             <b>+</b>
-            <span>useEffect(() =&gt; {'{'} const c = ... ; return () =&gt; c.abort() {'}'})</span>
+            <span>const c = new AbortController()</span>
+          </div>
+          <div className="add">
+            <b>+</b>
+            <span>return () =&gt; c.abort()</span>
           </div>
         </Hot>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="ft-pv-floats">
           <Hot
             tokens={['--dsw-alias-toast-bg', '--dsw-alias-toast-label', '--dsw-alias-state-success-secondary']}
             label="toast"
@@ -361,7 +372,7 @@ const ChatBody: FC<BodyProps> = ({ t, inspect, onInspect }) => (
             onInspect={onInspect}
             className="ft-pv-tip"
           >
-            这一行是快捷键提示
+            ⌘K 可随时召唤命令面板
           </Hot>
         </div>
       </div>
@@ -387,7 +398,7 @@ const ListBody: FC<BodyProps> = ({ t, inspect, onInspect }) => (
         ['cordis.patch.yml', 'idle'],
         ['palette.ts', 'active'],
       ].map(([label, state]) => (
-        <div className="ft-pv-row" key={label}>
+        <div className="ft-pv-row" key={label} data-state={state}>
           <i />
           <span>{label}</span>
           <em>{state}</em>
@@ -408,35 +419,58 @@ const FormBody: FC<BodyProps> = ({ t, inspect, onInspect }) => (
     >
       <span className="ft-pv-label">{t('studio.name')}</span>
       <span className="ft-pv-box">深海夜航</span>
+      <span className="ft-pv-hint">显示在设置页与分享卡片上</span>
     </Hot>
+
     <Hot
       tokens={['--dsw-alias-settings-card-fill', '--dsw-alias-settings-card-stroke', '--dsw-alias-brand-primary', '--dsw-alias-switch-thumb']}
       label="card + switch"
       inspect={inspect}
       onInspect={onInspect}
-      className="ft-pv-check"
+      className="ft-pv-check ft-pv-check-row"
     >
-      <span>{t('motion.title')}</span>
-      <span className="ft-pv-toggle" />
+      <span>
+        <b>{t('motion.title')}</b>
+        <em>{t('motion.note')}</em>
+      </span>
+      <span className="ft-pv-toggle" data-on="true" />
     </Hot>
+
     <Hot
       tokens={['--dsw-alias-settings-card-fill', '--dsw-alias-settings-card-stroke', '--dsw-alias-label-secondary']}
       label="card"
       inspect={inspect}
       onInspect={onInspect}
-      className="ft-pv-check"
+      className="ft-pv-check ft-pv-check-row"
     >
-      <span>{t('type.note')}</span>
+      <span>
+        <b>{t('type.pair')}</b>
+        <em>{t('type.note')}</em>
+      </span>
+      <span className="ft-pv-toggle" data-on="false" />
     </Hot>
+
+    <Hot
+      tokens={['--dsw-alias-state-success-primary', '--dsw-alias-state-success-tertiary', '--dsw-alias-label-secondary']}
+      label="success"
+      inspect={inspect}
+      onInspect={onInspect}
+      className="ft-pv-status ft-pv-status-ok"
+    >
+      <i>✓</i>
+      <span>{t('msg.saved')}</span>
+      <em>{t('msg.applied')}</em>
+    </Hot>
+
     <Hot
       tokens={['--dsw-alias-state-warn-primary', '--dsw-alias-state-warn-tertiary', '--dsw-alias-label-primary']}
       label="warning"
       inspect={inspect}
       onInspect={onInspect}
-      className="ft-pv-check"
+      className="ft-pv-status ft-pv-status-warn"
     >
-      <span>保存后重启生效</span>
-      <span className="ft-badge ft-badge-warn">{t('msg.saved')}</span>
+      <i>!</i>
+      <span>重启 DSH 后宿主界面才会使用新令牌</span>
     </Hot>
   </div>
 )

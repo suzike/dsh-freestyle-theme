@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useMemo, useState, type FC } from 'react'
 import { DICTIONARIES, format, type Translate } from './locale'
 import { defaultSpec, fullPalette, generateTokens, normalizeSpec, type ThemeSpec } from './palette'
+import { auditPalette, auditSummary } from './contrast'
 import {
   OverrideOwner,
   readJson,
@@ -94,6 +95,7 @@ const SettingsRow: FC<RowProps> = ({ ctx, t, theme, owner }) => {
   })
   const [open, setOpen] = useState(false)
   const [applied, setApplied] = useState(() => readJson<Record<string, unknown>>(STORAGE_SPEC) !== null)
+  const [appliedName, setAppliedName] = useState('')
 
   const palette = useMemo(() => fullPalette(spec), [spec])
 
@@ -126,6 +128,7 @@ const SettingsRow: FC<RowProps> = ({ ctx, t, theme, owner }) => {
       owner.set(generateTokens(next))
       setSpec(next)
       setApplied(true)
+      setAppliedName(themeName)
       writeJson(STORAGE_SPEC, next)
       window.dispatchEvent(
         new CustomEvent(APPLIED_EVENT, {
@@ -141,23 +144,27 @@ const SettingsRow: FC<RowProps> = ({ ctx, t, theme, owner }) => {
     removeKey(STORAGE_SPEC)
     setSpec(defaultSpec('light'))
     setApplied(false)
+    setAppliedName('')
   }, [owner])
 
-  const swatches = [
-    palette['--dsw-alias-bg-base'],
-    palette['--dsw-alias-brand-primary'],
-    palette['--dsw-specific-sidebar-fill'],
-    palette['--dsw-alias-bg-layer-1'],
-  ]
+  const thumb = {
+    side: palette['--dsw-specific-sidebar-fill'],
+    card: palette['--dsw-alias-bg-layer-1'],
+    line: palette['--dsw-alias-label-primary'],
+    dot: palette['--dsw-alias-brand-primary'],
+  }
 
-  const summary = `${spec.mode === 'light' ? t('studio.light') : t('studio.dark')} · ${Math.round(spec.th)}° · ${t('color.primary')}`
+  const score = auditSummary(auditPalette(palette))
+  const summary = `${spec.mode === 'light' ? t('studio.light') : t('studio.dark')} · ${Math.round(spec.th)}° · ${score.passed}/${score.total}`
 
   return (
     <div className="ft-row">
       <span className="ft-row-thumb" aria-hidden="true">
-        {swatches.map((color, index) => (
-          <i key={index} style={{ background: color ?? 'transparent' }} />
-        ))}
+        <i className="ft-thumb-side" style={{ background: thumb.side }} />
+        <i className="ft-thumb-card" style={{ background: thumb.card }} />
+        <i className="ft-thumb-line" style={{ background: thumb.line }} />
+        <i className="ft-thumb-line-2" style={{ background: thumb.line }} />
+        <i className="ft-thumb-dot" style={{ background: thumb.dot }} />
       </span>
 
       <div className="ft-row-main">
@@ -166,9 +173,22 @@ const SettingsRow: FC<RowProps> = ({ ctx, t, theme, owner }) => {
       </div>
 
       <span className="ft-row-actions">
-        <button className="ft-btn ft-btn-sm" onClick={() => setOpen(true)}>
-          {applied ? t('row.applied') : t('row.open')}
-          <span aria-hidden="true">›</span>
+        <button
+          className={applied ? 'ft-row-action is-on' : 'ft-row-action'}
+          onClick={() => setOpen(true)}
+          aria-haspopup="dialog"
+        >
+          {applied ? t('row.applied', { name: appliedName || t('plugin.title') }) : t('row.open')}
+          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+            <path
+              d="M4.5 2.5 8 6l-3.5 3.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
       </span>
 

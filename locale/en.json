@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "FreeStyle theme studio",
-    "description": "Shape your DSH theme on an OKLCH four-axis model with 12 presets: full-window studio, faithful preview, contrast and colour-vision audit, image or prompt generation, a saved library and share links."
+    "description": "Repaints all of DSH from 119 design tokens, 21 contrast pairs and 32 traditional Chinese colours."
   }
 }

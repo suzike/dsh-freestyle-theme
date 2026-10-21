@@ -675,6 +675,102 @@ export const PRESETS: readonly ThemePreset[] = [
 ]
 
 /**
+ * 中国传统色 — each entry is the published sRGB value of the dye/pigment name.
+ * The studio turns the value into a brand coordinate, so choosing 胭脂 gives a
+ * theme whose accent is 胭脂 rather than an arbitrary orange-red.
+ */
+export interface TraditionalColor {
+  id: string
+  hex: string
+}
+
+export const TRADITIONAL: readonly TraditionalColor[] = [
+  { id: 'yanzhi', hex: '#9D2933' },
+  { id: 'zhusha', hex: '#FF461F' },
+  { id: 'jiangzi', hex: '#8C4356' },
+  { id: 'ouhe', hex: '#E4C6D0' },
+  { id: 'taohong', hex: '#F47983' },
+  { id: 'haitang', hex: '#DB5A6B' },
+  { id: 'jianghong', hex: '#8C2232' },
+  { id: 'zitang', hex: '#56004F' },
+  { id: 'qinglian', hex: '#8D4BBB' },
+  { id: 'weizi', hex: '#7E1671' },
+  { id: 'dailan', hex: '#425066' },
+  { id: 'zangqing', hex: '#2E4E7E' },
+  { id: 'qunqing', hex: '#4C8DAE' },
+  { id: 'shiqing', hex: '#1685A9' },
+  { id: 'tianshuibi', hex: '#3B7C86' },
+  { id: 'cangqing', hex: '#7397AB' },
+  { id: 'yuebai', hex: '#D6ECF0' },
+  { id: 'shuangse', hex: '#E9F1F6' },
+  { id: 'zhuqing', hex: '#789262' },
+  { id: 'songhua', hex: '#BCE672' },
+  { id: 'doulyu', hex: '#9ED900' },
+  { id: 'ailv', hex: '#A4E2C6' },
+  { id: 'tenghuang', hex: '#FFB61E' },
+  { id: 'xiangse', hex: '#F0C239' },
+  { id: 'qiuxiang', hex: '#D9B611' },
+  { id: 'xinghuang', hex: '#FFA631' },
+  { id: 'zheshi', hex: '#955539' },
+  { id: 'tanse', hex: '#B36D61' },
+  { id: 'chenxiang', hex: '#4A3B32' },
+  { id: 'mose', hex: '#50616D' },
+  { id: 'yajing', hex: '#424C50' },
+  { id: 'xuanqing', hex: '#3D3B4F' },
+]
+
+/** sRGB hex → OKLCH with l in 0..1, c in 0..0.4, h in 0..360. */
+export function hexToOklch(hex: string): { l: number; c: number; h: number } {
+  const raw = hex.replace('#', '')
+  const full = raw.length === 3 ? raw.split('').map((ch) => ch + ch).join('') : raw
+  const n = Number.parseInt(full.slice(0, 6), 16)
+  const srgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((value) => value / 255)
+  const lin = srgb.map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+  const [r, g, b] = lin
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b)
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b)
+  const s2 = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b)
+  const okL = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s2
+  const okA = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s2
+  const okB = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s2
+  const c = Math.hypot(okA, okB)
+  let h = (Math.atan2(okB, okA) * 180) / Math.PI
+  if (h < 0) h += 360
+  return { l: okL, c, h }
+}
+
+/**
+ * Map a traditional colour onto the four axes. The dye supplies the hue and
+ * the accent chroma; the surface keeps a hint of it through `sc` and the
+ * neutral tint, and the lightness is pulled into the readable band so the
+ * colour stays an accent instead of becoming the text colour.
+ */
+export function traditionalSpec(color: TraditionalColor | string, mode: ThemeMode, base?: ThemeSpec): ThemeSpec {
+  const entry = typeof color === 'string' ? TRADITIONAL.find((item) => item.id === color) : color
+  if (!entry) return base ?? defaultSpec(mode)
+  const { l, c, h } = hexToOklch(entry.hex)
+  const source = base ?? defaultSpec(mode)
+  const accent = clamp(c * 0.92, 0.03, 0.26)
+  const l1 = mode === 'light' ? clamp(l, 0.44, 0.6) : clamp(Math.max(l, 0.7), 0.7, 0.87)
+  const spec = makeSpec(h, mode, {
+    c1: accent,
+    l1,
+    ths: h,
+    sc: clamp(c * 0.05, 0.002, 0.014),
+    neutralTint: clamp(c * 1.9, 0.12, 0.46),
+  })
+  return {
+    ...spec,
+    fontPair: source.fontPair,
+    fontScale: source.fontScale,
+    radius: source.radius,
+    shadow: source.shadow,
+    spread: source.spread,
+    stateBoost: source.stateBoost,
+  }
+}
+
+/**
  * Instantiate a preset for one mode. Accepts the preset or its id — passing an
  * id used to fall through to the defaults, which made twelve different cards
  * render as the same theme.

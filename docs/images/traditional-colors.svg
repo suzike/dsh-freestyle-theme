@@ -1,0 +1,236 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1152" height="528" viewBox="0 0 1152 528" role="img" aria-label="中国传统色 32 色">
+<defs>
+<radialGradient id="glow" cx="18%" cy="0%" r="80%"><stop offset="0%" stop-color="#3ddc97" stop-opacity="0.18"/><stop offset="60%" stop-color="#3ddc97" stop-opacity="0.03"/><stop offset="100%" stop-color="#0b0f14" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1152" height="528" fill="#0b0f14"/>
+<rect width="1152" height="528" fill="url(#glow)"/>
+<text x="32" y="54" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="26" font-weight="600" fill="#e8eaed">中国传统色</text>
+<text x="184" y="44" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#3ddc97">32</text>
+<text x="32" y="80" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="13" fill="#8b93a1">选一种传统色作为主色，其余坐标（副色、中性、明度骨架）由它推导 —— 每套仍然是 119 个令牌 + 21 组对比度校验。</text>
+<text x="1120" y="54" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" fill="#8b93a1">src/client/palette.ts</text>
+<g>
+<rect x="32" y="104" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="42" y="114" width="102" height="44" rx="8" fill="#9D2933"/>
+<rect x="42" y="114" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="44" y="172" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">胭脂</text>
+<text x="44" y="188" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#9D2933</text>
+</g>
+<g>
+<rect x="168" y="104" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="178" y="114" width="102" height="44" rx="8" fill="#FF461F"/>
+<rect x="178" y="114" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="180" y="172" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">朱砂</text>
+<text x="180" y="188" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#FF461F</text>
+</g>
+<g>
+<rect x="304" y="104" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="314" y="114" width="102" height="44" rx="8" fill="#8C4356"/>
+<rect x="314" y="114" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="316" y="172" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">绛紫</text>
+<text x="316" y="188" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#8C4356</text>
+</g>
+<g>
+<rect x="440" y="104" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="450" y="114" width="102" height="44" rx="8" fill="#E4C6D0"/>
+<rect x="450" y="114" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="452" y="172" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">藕荷</text>
+<text x="452" y="188" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#E4C6D0</text>
+</g>
+<g>
+<rect x="576" y="104" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="586" y="114" width="102" height="44" rx="8" fill="#F47983"/>
+<rect x="586" y="114" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="588" y="172" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">桃红</text>
+<text x="588" y="188" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#F47983</text>
+</g>
+<g>
+<rect x="712" y="104" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="722" y="114" width="102" height="44" rx="8" fill="#DB5A6B"/>
+<rect x="722" y="114" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="724" y="172" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">海棠</text>
+<text x="724" y="188" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#DB5A6B</text>
+</g>
+<g>
+<rect x="848" y="104" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="858" y="114" width="102" height="44" rx="8" fill="#8C2232"/>
+<rect x="858" y="114" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="860" y="172" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">绛红</text>
+<text x="860" y="188" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#8C2232</text>
+</g>
+<g>
+<rect x="984" y="104" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="994" y="114" width="102" height="44" rx="8" fill="#56004F"/>
+<rect x="994" y="114" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="996" y="172" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">紫棠</text>
+<text x="996" y="188" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#56004F</text>
+</g>
+<g>
+<rect x="32" y="196" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="42" y="206" width="102" height="44" rx="8" fill="#8D4BBB"/>
+<rect x="42" y="206" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="44" y="264" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">青莲</text>
+<text x="44" y="280" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#8D4BBB</text>
+</g>
+<g>
+<rect x="168" y="196" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="178" y="206" width="102" height="44" rx="8" fill="#7E1671"/>
+<rect x="178" y="206" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="180" y="264" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">魏紫</text>
+<text x="180" y="280" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#7E1671</text>
+</g>
+<g>
+<rect x="304" y="196" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="314" y="206" width="102" height="44" rx="8" fill="#425066"/>
+<rect x="314" y="206" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="316" y="264" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">黛蓝</text>
+<text x="316" y="280" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#425066</text>
+</g>
+<g>
+<rect x="440" y="196" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="450" y="206" width="102" height="44" rx="8" fill="#2E4E7E"/>
+<rect x="450" y="206" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="452" y="264" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">藏青</text>
+<text x="452" y="280" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#2E4E7E</text>
+</g>
+<g>
+<rect x="576" y="196" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="586" y="206" width="102" height="44" rx="8" fill="#4C8DAE"/>
+<rect x="586" y="206" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="588" y="264" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">群青</text>
+<text x="588" y="280" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#4C8DAE</text>
+</g>
+<g>
+<rect x="712" y="196" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="722" y="206" width="102" height="44" rx="8" fill="#1685A9"/>
+<rect x="722" y="206" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="724" y="264" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">石青</text>
+<text x="724" y="280" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#1685A9</text>
+</g>
+<g>
+<rect x="848" y="196" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="858" y="206" width="102" height="44" rx="8" fill="#3B7C86"/>
+<rect x="858" y="206" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="860" y="264" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">天水碧</text>
+<text x="860" y="280" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#3B7C86</text>
+</g>
+<g>
+<rect x="984" y="196" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="994" y="206" width="102" height="44" rx="8" fill="#7397AB"/>
+<rect x="994" y="206" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="996" y="264" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">苍青</text>
+<text x="996" y="280" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#7397AB</text>
+</g>
+<g>
+<rect x="32" y="288" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="42" y="298" width="102" height="44" rx="8" fill="#D6ECF0"/>
+<rect x="42" y="298" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="44" y="356" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">月白</text>
+<text x="44" y="372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#D6ECF0</text>
+</g>
+<g>
+<rect x="168" y="288" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="178" y="298" width="102" height="44" rx="8" fill="#E9F1F6"/>
+<rect x="178" y="298" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="180" y="356" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">霜色</text>
+<text x="180" y="372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#E9F1F6</text>
+</g>
+<g>
+<rect x="304" y="288" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="314" y="298" width="102" height="44" rx="8" fill="#789262"/>
+<rect x="314" y="298" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="316" y="356" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">竹青</text>
+<text x="316" y="372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#789262</text>
+</g>
+<g>
+<rect x="440" y="288" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="450" y="298" width="102" height="44" rx="8" fill="#BCE672"/>
+<rect x="450" y="298" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="452" y="356" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">松花</text>
+<text x="452" y="372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#BCE672</text>
+</g>
+<g>
+<rect x="576" y="288" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="586" y="298" width="102" height="44" rx="8" fill="#9ED900"/>
+<rect x="586" y="298" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="588" y="356" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">豆绿</text>
+<text x="588" y="372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#9ED900</text>
+</g>
+<g>
+<rect x="712" y="288" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="722" y="298" width="102" height="44" rx="8" fill="#A4E2C6"/>
+<rect x="722" y="298" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="724" y="356" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">艾绿</text>
+<text x="724" y="372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#A4E2C6</text>
+</g>
+<g>
+<rect x="848" y="288" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="858" y="298" width="102" height="44" rx="8" fill="#FFB61E"/>
+<rect x="858" y="298" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="860" y="356" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">藤黄</text>
+<text x="860" y="372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#FFB61E</text>
+</g>
+<g>
+<rect x="984" y="288" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="994" y="298" width="102" height="44" rx="8" fill="#F0C239"/>
+<rect x="994" y="298" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="996" y="356" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">缃色</text>
+<text x="996" y="372" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#F0C239</text>
+</g>
+<g>
+<rect x="32" y="380" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="42" y="390" width="102" height="44" rx="8" fill="#D9B611"/>
+<rect x="42" y="390" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="44" y="448" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">秋香</text>
+<text x="44" y="464" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#D9B611</text>
+</g>
+<g>
+<rect x="168" y="380" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="178" y="390" width="102" height="44" rx="8" fill="#FFA631"/>
+<rect x="178" y="390" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="180" y="448" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">杏黄</text>
+<text x="180" y="464" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#FFA631</text>
+</g>
+<g>
+<rect x="304" y="380" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="314" y="390" width="102" height="44" rx="8" fill="#955539"/>
+<rect x="314" y="390" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="316" y="448" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">赭石</text>
+<text x="316" y="464" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#955539</text>
+</g>
+<g>
+<rect x="440" y="380" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="450" y="390" width="102" height="44" rx="8" fill="#B36D61"/>
+<rect x="450" y="390" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="452" y="448" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">檀色</text>
+<text x="452" y="464" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#B36D61</text>
+</g>
+<g>
+<rect x="576" y="380" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="586" y="390" width="102" height="44" rx="8" fill="#4A3B32"/>
+<rect x="586" y="390" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="588" y="448" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">沉香</text>
+<text x="588" y="464" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#4A3B32</text>
+</g>
+<g>
+<rect x="712" y="380" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="722" y="390" width="102" height="44" rx="8" fill="#50616D"/>
+<rect x="722" y="390" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="724" y="448" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">墨色</text>
+<text x="724" y="464" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#50616D</text>
+</g>
+<g>
+<rect x="848" y="380" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="858" y="390" width="102" height="44" rx="8" fill="#424C50"/>
+<rect x="858" y="390" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="860" y="448" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">鸦青</text>
+<text x="860" y="464" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#424C50</text>
+</g>
+<g>
+<rect x="984" y="380" width="122" height="78" rx="12" fill="#10151b" stroke="rgba(255,255,255,0.08)"/>
+<rect x="994" y="390" width="102" height="44" rx="8" fill="#3D3B4F"/>
+<rect x="994" y="390" width="102" height="44" rx="8" fill="none" stroke="rgba(0,0,0,0.22)"/>
+<text x="996" y="448" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif" font-size="12.5" font-weight="500" fill="#e8eaed">玄青</text>
+<text x="996" y="464" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">#3D3B4F</text>
+</g>
+<text x="32" y="506" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#8b93a1">每个色值都会被转换到 OKLCH，品牌的色相与彩度进入四轴模型；对比度不达标的坐标由「一键修复」回调明度。</text>
+</svg>
