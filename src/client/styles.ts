@@ -267,15 +267,15 @@ export const CSS = `
 /* ---------------------------------------------------------------- shell */
 .ft-studio {
   position: fixed;
-  inset: 0;
+  inset: var(--ft-chrome-top, 0px) 0 0 0;
   z-index: 2147483000;
   display: grid;
-  /* The desktop shell keeps a window-control strip across the top of the page
-     (Electron titleBarOverlay: 40px tall on Windows). Those buttons are painted
-     by the OS above every pixel of page content, so whatever we put there is
-     either hidden behind them or eats their clicks. The header therefore grows
-     by that strip and puts a drag-capable title bar in it. */
-  grid-template-rows: calc(52px + var(--ft-chrome-top, 0px)) minmax(0, 1fr);
+  /* The desktop shell owns the top strip of the window: it draws the window
+     buttons there over an opaque fill of its own, and its own title bar shares
+     that band. Covering it means our text collides with theirs and our
+     background fights a rectangle we cannot recolour, so the overlay simply
+     starts underneath it. In a browser the strip is 0 and this is edge to edge. */
+  grid-template-rows: 52px minmax(0, 1fr);
   background: var(--dsw-alias-bg-base);
   overflow: hidden;
   counter-reset: none;
@@ -299,51 +299,14 @@ export const CSS = `
 
 /* ---------------------------------------------------------------- header */
 .ft-head {
-  display: grid;
-  grid-template-rows: var(--ft-chrome-top, 0px) 1fr;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
   padding: 0 12px;
   border-bottom: 1px solid var(--ft-hair);
   background: color-mix(in oklab, var(--dsw-alias-bg-overlay) 86%, transparent);
   backdrop-filter: blur(20px) saturate(160%);
-}
-
-/* Only rendered in the desktop shell; it is what a window's title bar is for —
-   a place to grab the window that holds nothing clickable. */
-.ft-chrome {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  height: var(--ft-chrome-top, 0px);
-  padding-left: 6px;
-  overflow: hidden;
-  -webkit-app-region: drag;
-  app-region: drag;
-  user-select: none;
-}
-
-.ft-chrome-mark {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--ft-accent);
-  flex: 0 0 auto;
-}
-
-.ft-chrome-label {
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-  color: var(--ft-ink-3);
-  white-space: nowrap;
-}
-
-.ft-head-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  height: 52px;
 }
 
 .ft-head-left,

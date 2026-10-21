@@ -34,7 +34,6 @@ const zh = {
   'studio.share': '分享 / 导出',
   'studio.apply': '应用到 DSH',
   'studio.close': '关闭 Studio',
-  'studio.window': '配色工作室',
   'studio.hint': '⌘K 命令 · ⌘Z 撤销 · Esc 关闭',
 
   // ── left rail ──────────────────────────────────────────────────────────
@@ -305,7 +304,6 @@ export const en: Record<DictKey, string> = {
   'studio.share': 'Share / export',
   'studio.apply': 'Apply to DSH',
   'studio.close': 'Close studio',
-  'studio.window': 'Colour studio',
   'studio.hint': '⌘K commands · ⌘Z undo · Esc to close',
 
   'rail.colors': 'Chinese classics',

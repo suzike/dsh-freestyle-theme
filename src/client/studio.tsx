@@ -991,63 +991,55 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
 
       {/* header — in the desktop shell the first row is the window's title bar */}
       <header className="ft-head">
-        {chromeTop > 0 ? (
-          <div className="ft-chrome" aria-hidden="true">
-            <span className="ft-chrome-mark" />
-            <span className="ft-chrome-label">{t('studio.window')}</span>
+        <div className="ft-head-left">
+          <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.close')} onClick={close}>
+            <Ico name="close" />
+          </button>
+          <div className="ft-head-title">
+            <input
+              ref={nameRef}
+              className="ft-name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              aria-label={t('studio.name')}
+              spellCheck={false}
+            />
+            <span className="ft-head-sub">
+              {t(`studio.${spec.mode}`)} · {Math.round(spec.th)}° · {summary.passed}/{summary.total}
+            </span>
           </div>
-        ) : null}
-        <div className="ft-head-row">
-          <div className="ft-head-left">
-            <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.close')} onClick={close}>
-              <Ico name="close" />
-            </button>
-            <div className="ft-head-title">
-              <input
-                ref={nameRef}
-                className="ft-name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                aria-label={t('studio.name')}
-                spellCheck={false}
-              />
-              <span className="ft-head-sub">
-                {t(`studio.${spec.mode}`)} · {Math.round(spec.th)}° · {summary.passed}/{summary.total}
-              </span>
-            </div>
-          </div>
+        </div>
 
-          <div className="ft-head-mid">
-            <div className="ft-seg" role="group" aria-label={t('studio.light')}>
-              <button aria-pressed={spec.mode === 'light'} onClick={() => commit(switchMode(spec, 'light'))}>
-                <Ico name="sun" size={12} />{t('studio.light')}
-              </button>
-              <button aria-pressed={spec.mode === 'dark'} onClick={() => commit(switchMode(spec, 'dark'))}>
-                <Ico name="moon" size={12} />{t('studio.dark')}
-              </button>
-            </div>
+        <div className="ft-head-mid">
+          <div className="ft-seg" role="group" aria-label={t('studio.light')}>
+            <button aria-pressed={spec.mode === 'light'} onClick={() => commit(switchMode(spec, 'light'))}>
+              <Ico name="sun" size={12} />{t('studio.light')}
+            </button>
+            <button aria-pressed={spec.mode === 'dark'} onClick={() => commit(switchMode(spec, 'dark'))}>
+              <Ico name="moon" size={12} />{t('studio.dark')}
+            </button>
           </div>
+        </div>
 
-          <div className="ft-head-right">
-            <div className="ft-group">
-              <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.undo')} title={t('studio.undo')} onClick={undo} disabled={doc.index === 0}>
-                <Ico name="undo" />
-              </button>
-              <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.redo')} title={t('studio.redo')} onClick={redo} disabled={doc.index >= doc.stack.length - 1}>
-                <Ico name="redo" />
-              </button>
-            </div>
-            <span className="ft-divider-v" />
-            <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('rail.save')} title={t('rail.save')} onClick={saveTheme}>
-              <Ico name="save" />
+        <div className="ft-head-right">
+          <div className="ft-group">
+            <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.undo')} title={t('studio.undo')} onClick={undo} disabled={doc.index === 0}>
+              <Ico name="undo" />
             </button>
-            <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.share')} title={t('studio.share')} onClick={() => setShareOpen(true)}>
-              <Ico name="share" />
-            </button>
-            <button className="ft-btn ft-btn-primary" onClick={apply}>
-              <Ico name="check" />{t('studio.apply')}
+            <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.redo')} title={t('studio.redo')} onClick={redo} disabled={doc.index >= doc.stack.length - 1}>
+              <Ico name="redo" />
             </button>
           </div>
+          <span className="ft-divider-v" />
+          <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('rail.save')} title={t('rail.save')} onClick={saveTheme}>
+            <Ico name="save" />
+          </button>
+          <button className="ft-btn ft-btn-icon ft-btn-ghost" aria-label={t('studio.share')} title={t('studio.share')} onClick={() => setShareOpen(true)}>
+            <Ico name="share" />
+          </button>
+          <button className="ft-btn ft-btn-primary" onClick={apply}>
+            <Ico name="check" />{t('studio.apply')}
+          </button>
         </div>
       </header>
 

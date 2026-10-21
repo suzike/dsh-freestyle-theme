@@ -58,21 +58,18 @@ test('the resting state cannot be mistaken for the on state', () => {
   assert.ok(!/--dsw-alias-brand-primary/.test(base), 'the resting state must not already look switched on')
 })
 
-test('the desktop window strip is reserved, draggable, and empty of controls', () => {
-  // Electron paints minimise/maximise/close *above* page content inside a 40px
-  // strip. Anything we put there is hidden behind them or steals their clicks,
-  // so the header grows by that strip and gives it to a drag handle instead.
+test('the desktop window strip is left to the shell instead of being covered', () => {
+  // Electron draws the window buttons over an opaque fill of its own inside a
+  // 40px strip, and the shell's own title bar shares that band. Covering it
+  // collides with their text and fights a colour we cannot set, so the overlay
+  // starts underneath: one declaration, no chrome row of our own.
   const shell = one('.ft-studio')
-  assert.match(shell, /grid-template-rows:\s*calc\(52px \+ var\(--ft-chrome-top/, 'the header must grow by the strip')
-  assert.ok(!/padding-top/.test(shell), 'the strip belongs to the header, not to the whole overlay')
+  assert.match(shell, /inset:\s*var\(--ft-chrome-top, 0px\) 0 0 0/, 'the overlay must start below the strip')
+  assert.ok(!/grid-template-rows:[^;]*--ft-chrome-top/.test(shell), 'the header must not grow into the strip')
 
   const head = one('.ft-head')
-  assert.match(head, /grid-template-rows:\s*var\(--ft-chrome-top/, 'the header must lay the strip out as its first row')
+  assert.match(head, /height:\s*52px/, 'the toolbar keeps its own height')
 
-  const chrome = one('.ft-chrome')
-  assert.match(chrome, /-webkit-app-region:\s*drag/, 'the strip must keep the window draggable')
-  assert.match(chrome, /height:\s*var\(--ft-chrome-top/, 'the strip must take exactly the reserved height')
-
-  const row = one('.ft-head-row')
-  assert.match(row, /height:\s*52px/, 'the real toolbar keeps its own height below the strip')
+  assert.equal(all('.ft-chrome').length, 0, 'no element of ours may live in the shell strip')
+  assert.equal(all('.ft-studio-drag').length, 0, 'dragging is the shell job, not ours')
 })
