@@ -296,7 +296,7 @@ function evenSurfaces(tokens: Record<string, string>, gain: number): Record<stri
 export function fullPalette(spec: ThemeSpec): Palette {
   const light = spec.mode === 'light'
   const { th, th2, ths, c1, c2, sc, l1, l2, tx } = spec
-  const sb = spec.sb ?? (light ? DEF_LIGHT.sb : DEF_DARK.sb)
+  const sb = light ? Math.min(spec.sb ?? DEF_LIGHT.sb, 0.961) : spec.sb ?? DEF_DARK.sb
 
   /** How far the elevation ladder is stretched (1 = shipped contrast). */
   const k = clamp(spec.spread ?? 0.1, 0.04, 0.2) / 0.1
@@ -341,7 +341,9 @@ export function fullPalette(spec: ThemeSpec): Palette {
 
   // Surfaces: the host keeps light cards pure white and stacks dark layers
   // upward, so the same rule is applied here — stretched by `spread`.
-  const bgEff = light ? clamp(spec.bg - (k - 1) * 0.045, 0.88, 0.995) : spec.bg
+  // The canvas is capped at 0.958 so the card band above it always has gamut
+  // room to hold the tint (see LIGHT_TOP below).
+  const bgEff = light ? clamp(spec.bg - (k - 1) * 0.045, 0.88, 0.952) : spec.bg
   const sBase = bgEff
   // Light mode: cards stay pure white and elevation spreads downward from
   // there, so layer-2/3 differ by a hair instead of collapsing into one tone.
@@ -349,9 +351,13 @@ export function fullPalette(spec: ThemeSpec): Palette {
   // no chroma room at L 0.99, so a brighter card cannot carry the same tint as
   // the canvas and the page reads as a patchwork. Trading 0.01 of elevation for
   // a card that takes colour is what makes the tint look like one material.
-  const sL1 = light ? Math.min(bgEff + 0.018 * k, 0.998) : clamp(bgEff + 0.035 * k, 0.02, 0.6)
-  const sL2 = light ? Math.max(0.02, sL1 - 0.006 * k) : clamp(bgEff + 0.06 * k, 0.02, 0.65)
-  const sL3 = light ? Math.max(0.02, sL1 - 0.012 * k) : clamp(bgEff + 0.085 * k, 0.02, 0.7)
+  // Every light surface lives inside one narrow band (0.940–0.972). Above 0.97
+  // sRGB has almost no chroma left, which is why the sidebar and the title band
+  // used to read paler than the canvas: they were simply closer to white.
+  const LIGHT_TOP = 0.966
+  const sL1 = light ? Math.min(bgEff + 0.014 * k, LIGHT_TOP) : clamp(bgEff + 0.035 * k, 0.02, 0.6)
+  const sL2 = light ? Math.max(0.02, sL1 - 0.005 * k) : clamp(bgEff + 0.06 * k, 0.02, 0.65)
+  const sL3 = light ? Math.max(0.02, sL1 - 0.010 * k) : clamp(bgEff + 0.085 * k, 0.02, 0.7)
   const sOverlay = light
     ? Math.max(0.04, bgEff - 0.045 * k)
     : clamp(bgEff + 0.12 * k, 0.02, 0.8)
