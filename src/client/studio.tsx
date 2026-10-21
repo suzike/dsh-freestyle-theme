@@ -41,6 +41,7 @@ import {
 import { aiCandidates, localCandidates, presetCandidates, themeFromImage, type Swatch } from './generate'
 import { PreviewFrame, VisionFilters, type BlindMode, type InspectTarget, type PreviewView } from './preview'
 import { format, type Translate } from './locale'
+import { detectChromeTop, isViewportAnchored } from './chrome'
 import { fullOverrides } from './retint'
 import {
   API_BASE,
@@ -70,56 +71,6 @@ export interface StudioProps {
   /** Clear the applied override and its stored spec. */
   onClear?: () => void
   onClose: () => void
-}
-
-/**
- * Height of the desktop shell's window-control strip, in CSS px.
- *
- * The desktop build runs Electron with `titleBarStyle: 'hidden'` plus a
- * `titleBarOverlay` (40px tall on Windows), so minimise / maximise / close are
- * painted by the OS *above* every pixel of page content. A full-bleed overlay
- * therefore has to keep its own controls out of that strip or they end up
- * buried under the window buttons. The overlay also exposes the strip through
- * `env(titlebar-area-*)`, which is the only reliable signal: a browser tab has
- * no such strip, so it must resolve to 0 and stay edge-to-edge.
- */
-function windowChromeTop(): number {
-  if (typeof window === 'undefined') return 0
-  const forced = (window as unknown as { __ftChromeTop?: number }).__ftChromeTop
-  if (typeof forced === 'number' && Number.isFinite(forced)) return Math.max(0, forced)
-  try {
-    const probe = document.createElement('span')
-    probe.style.cssText =
-      'position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;padding-top:env(titlebar-area-height,-1px)'
-    document.body.appendChild(probe)
-    const value = Number.parseFloat(getComputedStyle(probe).paddingTop)
-    probe.remove()
-    if (Number.isFinite(value) && value >= 0) return value
-  } catch {
-    /* a probe that cannot run only costs us the reserved strip */
-  }
-  // A shell that hides its title bar without exposing the overlay variables
-  // still draws the window buttons over the page; every desktop build seen so
-  // far uses the same 40px strip on Windows.
-  if (/Electron/i.test(navigator.userAgent) && !/Macintosh/i.test(navigator.userAgent)) return 40
-  return 0
-}
-
-/**
- * Whether a `position: fixed` overlay really covers the viewport. A transformed
- * ancestor turns `fixed` into "fixed to that ancestor", and the studio would
- * shrink to a panel — where reserving the shell's 40px control strip would just
- * leave a band of dead space. Measuring the box cannot tell the two apart while
- * the entry animation scales it, so inspect the ancestors instead.
- */
-function isViewportAnchored(el: HTMLElement): boolean {
-  if (getComputedStyle(el).position !== 'fixed') return false
-  for (let node = el.parentElement; node && node !== document.body; node = node.parentElement) {
-    const style = getComputedStyle(node)
-    if (style.transform !== 'none' || style.filter !== 'none' || style.perspective !== 'none') return false
-    if (style.contain.includes('paint') || style.willChange.includes('transform')) return false
-  }
-  return true
 }
 
 interface IconProps {
@@ -1023,7 +974,7 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
   useLayoutEffect(() => {
     const el = rootRef.current
     if (!el) return
-    setChromeTop(isViewportAnchored(el) ? windowChromeTop() : 0)
+    setChromeTop(isViewportAnchored(el) ? detectChromeTop(document, window) : 0)
   }, [])
 
   return (

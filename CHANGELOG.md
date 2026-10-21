@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.6
+
+0.6.5 修方向对了，但**桌面端仍然没生效**：它靠 User-Agent 里有 Electron 才认出桌面壳，而打包版把 UA 改掉了；同时用 `env(titlebar-area-height, -1px)` 探测控制条高度——`-1px` 是非法 padding，浏览器直接丢弃该声明，于是永远读到 0。
+
+### 修复
+- **换成不可能认错的信号**：桌面端 preload 里有 `markDocumentPlatform()`，会把 `process.platform` 写到 `html[data-platform]`；网页端从不设置这个属性。检测顺序改为：显式覆盖 → `env(titlebar-area-height)`（覆盖层存在时 Chromium 才给出真实值）→ `data-platform`（桌面壳 40px）→ 0。
+- **探测改成双探针**：分别用 `0px` 与 `1px` 兜底读一次，两次一致才算覆盖层存在，否则判为无覆盖层。非法兜底值导致「看起来像 0」的坑被测试锁住。
+- 检测逻辑从 `studio.tsx` 抽到 `src/client/chrome.ts`（`detectChromeTop` / `chromeTopFrom` / `isViewportAnchored` / `DESKTOP_STRIP`），可以脱离 DOM 单测。
+- `isViewportAnchored` 会跳过**正在播放动画**的祖先：宿主弹窗的入场动画带 transform，不能据此判定浮层被收成了面板。
+
+### 验证
+- 新增 4 条 `chrome` 单测（浏览器 0 / 桌面 40 / 覆盖层变量优先 / 显式覆盖优先），共 67 条全绿。
+- harness 两个变体各截一张：`data-platform=win32` → 40px 标题栏 + 按钮下移；无该属性 → 贴边、无空带。
+- `npx tsc --noEmit` 通过。
+
 ## 0.6.5
 
 修「左上角和右上角都在遮挡」：桌面端的窗口按钮条（Electron `titleBarOverlay`，Windows 上 40px）由系统画在所有页面内容之上，而工作室是全窗浮层——右上角那排撤销/保存/分享正好压在最小化/最大化/关闭底下，左上角又贴着窗口边缘。
