@@ -66,6 +66,9 @@ export interface ThemeSpec {
   /* ── state cluster ───────────────────────────────────────────────────── */
   /** State colour chroma boost, 0…1. */
   stateBoost: number
+  /* ── colour intensity ───────────────────────────────────────────────── */
+  /** How much chroma the surfaces carry, 0.4…1.8 (1 = the shipped default). */
+  vivid: number
   /* ── text ────────────────────────────────────────────────────────────── */
   /** Foreground (text) lightness. */
   tx: number
@@ -90,11 +93,11 @@ export const CHROMA_CAP = {
   /** Channel/secondary accent. */
   accent: 0.3,
   /** Plain surfaces (backgrounds, cards, bubbles). */
-  surface: 0.03,
+  surface: 0.075,
   /** Neutral chrome (borders, scrollbars, dividers). */
-  neutral: 0.012,
+  neutral: 0.022,
   /** Hairlines and strokes. */
-  border: 0.02,
+  border: 0.035,
   /** Any text colour. */
   text: 0.03,
   /** Status colours. */
@@ -245,17 +248,34 @@ export function fullPalette(spec: ThemeSpec): Palette {
   const k = clamp(spec.spread ?? 0.1, 0.04, 0.2) / 0.1
   /** Neutral tint chroma carried by every grey. */
   const nC = clamp(spec.neutralTint ?? 0.35, 0, 1) * CHROMA_CAP.neutral
+  /**
+   * Colour intensity. The whole complaint this axis answers: a near-white
+   * surface has almost no room for chroma, so tinting it *in proportion to what
+   * sRGB allows* rather than to a fixed cap is the only way to make a palette
+   * read as coloured without lowering its lightness. `vivid` scales that ask;
+   * every `oklchToHex` still clamps to the gamut at the token's own lightness,
+   * so a light card takes what it can and a dark one takes more.
+   */
+  const vivid = clamp(spec.vivid ?? 1, 0.4, 1.8)
   /** State chroma multiplier. */
   const sMul = 0.7 + clamp(spec.stateBoost ?? 0.55, 0, 1) * 0.6
 
   const hex = (l: number, c: number, h: number): string => oklchToHex(l, c, h)
   const rgba = (l: number, c: number, h: number, alpha: number): string =>
     oklchToRgba(l, c, h, alpha)
-  /** A surface colour: channel tint + inherited neutral tint, capped. */
+  /**
+   * A surface colour. Tint strength follows the *brand* chroma rather than a
+   * fixed floor: a palette whose accent is barely coloured should produce a
+   * barely coloured canvas, and a saturated one should clearly show on white.
+   * (Forcing a uniform floor made every preset converge on the same grey —
+   * which read as "the colour I picked did nothing".)
+   */
+  const brandC = clamp(spec.c1 ?? 0.08, 0, 0.32)
   const surf = (factor: number, extra = 0): number =>
-    clamp(sc * factor + nC + extra, 0, CHROMA_CAP.surface)
+    clamp((0.006 + brandC * 0.5 * factor + sc * 0.9 * factor) * vivid + nC + extra, 0, CHROMA_CAP.surface)
   /** A neutral/chrome colour (borders, scrollbars, masks). */
-  const chrome = (factor: number): number => clamp(sc * factor + nC, 0, CHROMA_CAP.neutral)
+  const chrome = (factor: number): number =>
+    clamp((0.006 + sc * 0.7 * factor) * vivid + nC * 0.85, 0, CHROMA_CAP.neutral)
   /** A text colour: a whisper of the neutral tint, never more. */
   const ink = (l: number, extra = 0): string =>
     hex(l, clamp(0.006 + nC * 0.55 + extra, 0, CHROMA_CAP.text), th)
@@ -502,6 +522,7 @@ export function makeSpec(
     neutralTint: 0.35,
     spread: 0.1,
     stateBoost: 0.55,
+    vivid: 0.85,
     fontPair: DEF_LOOK.fontPair,
     fontScale: DEF_LOOK.fontScale,
     radius: DEF_LOOK.radius,
@@ -577,6 +598,7 @@ export function normalizeSpec(raw: unknown): ThemeSpec {
     neutralTint: clamp(num(input.neutralTint, base.neutralTint), 0, 1),
     spread: clamp(num(input.spread, base.spread), 0.04, 0.2),
     stateBoost: clamp(num(input.stateBoost, base.stateBoost), 0, 1),
+    vivid: clamp(num(input.vivid, base.vivid), 0.4, 1.8),
     fontPair: pairOf(input.fontPair, base.fontPair),
     fontScale: clamp(num(input.fontScale, base.fontScale), 0.9, 1.15),
     radius: tier(input.radius, base.radius),
@@ -652,6 +674,8 @@ export interface ThemePreset {
   light: Partial<ThemeSpec>
   /** Dark-mode patch applied on top of the default dark spec. */
   dark: Partial<ThemeSpec>
+  /** A deliberately near-grey set (graphite): it is exempt from the colour floor. */
+  neutral?: boolean
 }
 
 /**
@@ -670,7 +694,7 @@ export const PRESETS: readonly ThemePreset[] = [
   { id: 'twilight', light: { th: 300, c1: 0.095, sc: 0.008, neutralTint: 0.38, spread: 0.11, stateBoost: 0.55 }, dark: { th: 295, c1: 0.1, sc: 0.008, neutralTint: 0.42, spread: 0.15, stateBoost: 0.6 } },
   { id: 'sand', light: { th: 72, c1: 0.085, sc: 0.016, neutralTint: 0.62, spread: 0.09, stateBoost: 0.45 }, dark: { th: 68, c1: 0.08, sc: 0.014, neutralTint: 0.66, spread: 0.13, stateBoost: 0.5 } },
   { id: 'cobalt', light: { th: 258, c1: 0.16, neutralTint: 0.32, spread: 0.1, stateBoost: 0.6 }, dark: { th: 258, c1: 0.15, neutralTint: 0.36, spread: 0.14, stateBoost: 0.65 } },
-  { id: 'graphite', light: { th: 0, c1: 0.008, sc: 0, neutralTint: 0.08, spread: 0.12, stateBoost: 0.5 }, dark: { th: 0, c1: 0.01, sc: 0, neutralTint: 0.1, spread: 0.16, stateBoost: 0.55 } },
+  { id: 'graphite', neutral: true, light: { th: 0, c1: 0.008, sc: 0, neutralTint: 0.08, spread: 0.12, stateBoost: 0.5, vivid: 1 }, dark: { th: 0, c1: 0.01, sc: 0, neutralTint: 0.1, spread: 0.16, stateBoost: 0.55, vivid: 1.05 } },
   { id: 'moss', light: { th: 120, c1: 0.06, sc: 0.01, neutralTint: 0.48, spread: 0.1, stateBoost: 0.55 }, dark: { th: 120, c1: 0.065, sc: 0.01, neutralTint: 0.52, spread: 0.14, stateBoost: 0.6 } },
 ]
 
@@ -682,13 +706,15 @@ export const PRESETS: readonly ThemePreset[] = [
 export interface TraditionalColor {
   id: string
   hex: string
+  /** Overrides the default colour depth when the dye itself is very muted. */
+  vivid?: number
 }
 
 export const TRADITIONAL: readonly TraditionalColor[] = [
   { id: 'yanzhi', hex: '#9D2933' },
   { id: 'zhusha', hex: '#FF461F' },
   { id: 'jiangzi', hex: '#8C4356' },
-  { id: 'ouhe', hex: '#E4C6D0' },
+  { id: 'ouhe', hex: '#E4C6D0', vivid: 1.2 },
   { id: 'taohong', hex: '#F47983' },
   { id: 'haitang', hex: '#DB5A6B' },
   { id: 'jianghong', hex: '#8C2232' },
@@ -767,6 +793,7 @@ export function traditionalSpec(color: TraditionalColor | string, mode: ThemeMod
     shadow: source.shadow,
     spread: source.spread,
     stateBoost: source.stateBoost,
+    vivid: entry.vivid ?? 1.25,
   }
 }
 
@@ -821,6 +848,7 @@ function toWire(spec: ThemeSpec): Record<string, number | string> {
     n: +spec.neutralTint.toFixed(2),
     sp: +spec.spread.toFixed(2),
     st: +spec.stateBoost.toFixed(2),
+    vi: +spec.vivid.toFixed(2),
     f: spec.fontPair,
     fs: +spec.fontScale.toFixed(2),
     r: spec.radius,
@@ -845,6 +873,7 @@ function fromWire(wire: Record<string, unknown>): ThemeSpec {
     neutralTint: wire.n,
     spread: wire.sp,
     stateBoost: wire.st,
+    vivid: wire.vi,
     fontPair: wire.f,
     fontScale: wire.fs,
     radius: wire.r,

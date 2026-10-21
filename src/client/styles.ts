@@ -2300,4 +2300,26 @@ export const CSS = `
 @media (hover: none) {
   .ft-card-rename, .ft-card-del { opacity: 1; pointer-events: auto; }
 }
+
+/* Depth strip: the one palette-wide control, pinned above the role sections so
+   it is reachable without scrolling past every channel. */
+.ft-depth {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin: -2px -2px 10px;
+  padding: 10px 12px 12px;
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--dsw-alias-bg-overlay) 92%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 color-mix(in oklab, var(--dsw-alias-label-primary) 8%, transparent);
+}
+.ft-depth .ft-seg.is-quick {
+  gap: 4px;
+}
+.ft-depth .ft-seg.is-quick button {
+  flex: 1;
+  font-size: 11px;
+  padding: 4px 0;
+}
 `

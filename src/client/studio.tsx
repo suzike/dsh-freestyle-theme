@@ -43,6 +43,7 @@ import { PreviewFrame, VisionFilters, type BlindMode, type InspectTarget, type P
 import { format, type Translate } from './locale'
 import { detectChromeTop, isViewportAnchored } from './chrome'
 import { fullOverrides } from './retint'
+import { vividnessOf, vividnessScore } from './vividness'
 import {
   API_BASE,
   fetchLibrary,
@@ -544,6 +545,10 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
   const palette = useMemo(() => fullPalette(spec), [spec])
   const results = useMemo(() => auditPalette(palette), [palette])
   const summary = useMemo(() => auditSummary(results), [results])
+  const vividScore = useMemo(
+    () => vividnessScore(vividnessOf(palette), spec.mode),
+    [palette, spec.mode],
+  )
   const selectedStop = HUE_STOPS[hueStopIndex(spec.th)]
   const otherMode = spec.mode === 'light' ? 'dark' : 'light'
   const baseline = appliedSpec ?? defaultSpec(spec.mode)
@@ -1309,6 +1314,29 @@ export const Studio: FC<StudioProps> = ({ t, theme, initial, onApplied, onClear,
         {/* inspector */}
         <aside className="ft-insp" id="ft-inspector" aria-label={t('inspector.color')} hidden={!inspOpen}>
           <div className="ft-insp-body">
+            <div className="ft-depth">
+              <div style={{ display: 'grid', gap: 8 }}>
+                <Slider
+                  label={t('color.vivid')}
+                  value={spec.vivid}
+                  min={0.3}
+                  max={1.6}
+                  step={0.01}
+                  formatValue={(value) => `${Math.round(value * 100)}%`}
+                  onChange={(value) => patch({ vivid: value })}
+                />
+                <div className="ft-seg is-quick" role="group" aria-label={t('color.vivid')}>
+                  {([0.55, 0.85, 1.25] as const).map((level, i) => (
+                    <button key={level} aria-pressed={Math.abs(spec.vivid - level) < 0.03} onClick={() => patch({ vivid: level })}>
+                      {t(`vivid.${['soft', 'standard', 'rich'][i]}`)}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary)', lineHeight: 1.5 }}>
+                  {t('color.vividHint')}
+                </div>
+              </div>
+            </div>
             <Section title={t('inspector.color')}>
               <Channel mode={spec.mode} {...channelProps('th', spec.th, spec.c1, spec.l1, 0.37)} />
               <Channel mode={spec.mode} {...channelProps('th2', spec.th2, spec.c2, spec.l2, 0.2)} />

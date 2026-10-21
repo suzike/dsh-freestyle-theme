@@ -14,7 +14,7 @@
  * @module dsh-freestyle-theme/client/retint
  */
 
-import { CHROMA_CAP, clamp, generateTokens, switchMode, type ThemeMode, type ThemeSpec } from './palette'
+import { CHROMA_CAP, clamp, gamutChroma, generateTokens, switchMode, type ThemeMode, type ThemeSpec } from './palette'
 import type { TokenOverrides, ThemeService } from './services'
 
 type Role = 'brand' | 'state' | 'ink' | 'line' | 'surface'
@@ -127,17 +127,27 @@ export function retintColor(value: string, spec: ThemeSpec, role: Role): string 
   if (!parsed) return null
   const { l, c, a } = parsed
   const boost = 0.7 + clamp(spec.stateBoost ?? 0.55, 0, 1) * 0.6
+  // Surfaces in the shell sit on the same near-white ladder as ours, so they get
+  // the same treatment: ask for a real tint and let sRGB clamp it at that token's
+  // own lightness. `min(c, 0.03)` used to keep every panel grey-by-design.
+  const tint = clamp(spec.vivid ?? 1, 0.4, 1.8)
+  const room = gamutChroma(l, CHROMA_CAP.surface, spec.ths)
   switch (role) {
     case 'brand':
       return format({ l, c: clamp(Math.max(c, spec.c1), 0, 0.37), h: spec.th, a })
     case 'state':
       return format({ l, c: clamp(c * boost, 0, CHROMA_CAP.state), h: parsed.h, a })
     case 'ink':
-      return format({ l, c: clamp(Math.min(c, 0.03) + 0.002, 0, CHROMA_CAP.text), h: spec.ths, a })
+      return format({ l, c: clamp(Math.min(c, 0.03) + 0.002 * tint, 0, CHROMA_CAP.text), h: spec.ths, a })
     case 'line':
-      return format({ l, c: clamp(Math.min(c, 0.02), 0, CHROMA_CAP.border), h: spec.ths, a })
+      return format({ l, c: clamp(Math.max(Math.min(c, 0.02), 0.004) * 1.4 * tint, 0, CHROMA_CAP.border), h: spec.ths, a })
     default:
-      return format({ l, c: clamp(Math.min(c, 0.03) + (spec.sc ?? 0.008) * 0.5, 0, CHROMA_CAP.surface), h: spec.ths, a })
+      return format({
+        l,
+        c: clamp((0.012 + (spec.sc ?? 0.008) * 1.6) * tint, 0, Math.min(room, CHROMA_CAP.surface)),
+        h: spec.ths,
+        a,
+      })
   }
 }
 
@@ -185,7 +195,10 @@ export function retintAll(theme: ThemeService | undefined, spec: ThemeSpec): Tok
 /** Keep only the axes that matter for retinting, with the scheme's defaults. */
 function axesFor(spec: ThemeSpec, mode: ThemeMode): Partial<ThemeSpec> {
   const base = switchMode(spec, mode)
-  return { th: base.th, th2: base.th2, ths: base.ths, c1: base.c1, c2: base.c2, sc: base.sc, stateBoost: base.stateBoost }
+  return {
+    th: base.th, th2: base.th2, ths: base.ths, c1: base.c1, c2: base.c2,
+    sc: base.sc, stateBoost: base.stateBoost, vivid: base.vivid,
+  }
 }
 
 /**
