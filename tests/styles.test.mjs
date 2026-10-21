@@ -4,8 +4,9 @@ import { load } from './_ts-hook.mjs'
 
 const { CSS } = await load('styles')
 
-/** Every flat `selector { body }` pair in the sheet. */
-const RULES = [...CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({
+/** Every flat `selector { body }` pair in the sheet, comments stripped. */
+const BARE = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+const RULES = [...BARE.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({
   selector: m[1].trim().replace(/\s+/g, ' '),
   body: m[2],
 }))
@@ -55,4 +56,23 @@ test('the resting state cannot be mistaken for the on state', () => {
   const onRule = one(".ft-pv-toggle[data-on='true']")
   assert.match(onRule, /--dsw-alias-brand-primary/, 'the on state paints the track with the brand token')
   assert.ok(!/--dsw-alias-brand-primary/.test(base), 'the resting state must not already look switched on')
+})
+
+test('the desktop window strip is reserved, draggable, and empty of controls', () => {
+  // Electron paints minimise/maximise/close *above* page content inside a 40px
+  // strip. Anything we put there is hidden behind them or steals their clicks,
+  // so the header grows by that strip and gives it to a drag handle instead.
+  const shell = one('.ft-studio')
+  assert.match(shell, /grid-template-rows:\s*calc\(52px \+ var\(--ft-chrome-top/, 'the header must grow by the strip')
+  assert.ok(!/padding-top/.test(shell), 'the strip belongs to the header, not to the whole overlay')
+
+  const head = one('.ft-head')
+  assert.match(head, /grid-template-rows:\s*var\(--ft-chrome-top/, 'the header must lay the strip out as its first row')
+
+  const chrome = one('.ft-chrome')
+  assert.match(chrome, /-webkit-app-region:\s*drag/, 'the strip must keep the window draggable')
+  assert.match(chrome, /height:\s*var\(--ft-chrome-top/, 'the strip must take exactly the reserved height')
+
+  const row = one('.ft-head-row')
+  assert.match(row, /height:\s*52px/, 'the real toolbar keeps its own height below the strip')
 })
